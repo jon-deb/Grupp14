@@ -1,0 +1,17 @@
+SRCDIR=./source
+CC=gcc-13
+INCLUDE=/opt/homebrew/include
+
+CFLAGS=-g -I$(INCLUDE) -c
+LIBS=/opt/homebrew/lib
+LDFLAGS=-lSDL2main -lSDL2_image -lSDL2
+
+simpleSDLexample1: main.o
+	$(CC) main.o -o simpleSDLexample2 $(LDFLAGS) -L$(LIBS)
+
+main.o: $(SRCDIR)/main.c
+	$(CC) $(CFLAGS) $(SRCDIR)/main.c -o main.o
+
+clean:
+	rm -f simpleSDLexample2
+	rm -f main.o
