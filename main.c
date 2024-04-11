@@ -12,5 +12,12 @@ int main(int argv, char** args) {
         printf("Error: %s\n", SDL_GetError());
         return 1;
     }
+
+    SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
+    if(!pWindow){
+        printf("Error: %s\n",SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
 }
 
