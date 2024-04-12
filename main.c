@@ -20,6 +20,42 @@ int main(int argv, char** args) {
         return 1;
     }
 
+    SDL_Renderer *pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
+    if(!pRenderer){
+        printf("Error: %s\n",SDL_GetError());
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;    
+    }
+
+    SDL_Surface *pSurface = IMG_Load("resources/ship.png");
+    if(!pSurface){
+        printf("Error: %s\n",SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;    
+    }
+    SDL_Texture *pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
+    SDL_FreeSurface(pSurface);
+    if(!pTexture){
+        printf("Error: %s\n",SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;    
+    }
+
+    SDL_Rect shipRect;
+    SDL_QueryTexture(pTexture,NULL,NULL,&shipRect.w,&shipRect.h);
+    shipRect.w/=4;
+    shipRect.h/=4;
+    float shipX = (WINDOW_WIDTH - shipRect.w)/2;//left side
+    float shipY = (WINDOW_HEIGHT - shipRect.h)/2;//upper side
+    float shipVelocityX = 0;//unit: pixels/s
+    float shipVelocityY = 0;
+
     
+
 }
 
