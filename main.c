@@ -55,7 +55,12 @@ int main(int argv, char** args) {
     float shipVelocityX = 0;//unit: pixels/s
     float shipVelocityY = 0;
 
-    
+    SDL_DestroyTexture(pTexture);
+    SDL_DestroyRenderer(pRenderer);
+    SDL_DestroyWindow(pWindow);
+
+    SDL_Quit();
+    return 0;
 
 }
 
