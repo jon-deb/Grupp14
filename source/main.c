@@ -27,6 +27,26 @@ int main(int argv, char** args){
         return 1;    
     }
 
+    
+    SDL_Surface *backgroundSurface = IMG_Load("resources/field.png");
+    if(!backgroundSurface){
+        printf("Error: %s\n",SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;    
+    }
+
+    SDL_Texture *backgroundTexture = SDL_CreateTextureFromSurface(pRenderer, backgroundSurface);
+    SDL_FreeSurface(backgroundSurface);
+    if(!backgroundTexture){
+        printf("Error: %s\n",SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;    
+    }
+
     SDL_Surface *pSurface = IMG_Load("resources/ship.png");
     if(!pSurface){
         printf("Error: %s\n",SDL_GetError());
@@ -123,8 +143,12 @@ int main(int argv, char** args){
         shipRect.x = shipX;
         shipRect.y = shipY;
 
-        SDL_RenderClear(pRenderer);
+        // Render background
+        SDL_RenderCopy(pRenderer, backgroundTexture, NULL, NULL);
+
+        // Render ship
         SDL_RenderCopy(pRenderer,pTexture,NULL,&shipRect);
+
         SDL_RenderPresent(pRenderer);
         SDL_Delay(1000/60);//60 frames/s
     }
