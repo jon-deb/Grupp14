@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
-#include "ball.h"
+#include "../include/ball.h"
 #include <string.h>
 
 struct ball{
@@ -12,11 +12,14 @@ struct ball{
 Ball *createBall(SDL_Renderer *pRenderer) {
     Ball *pBall = malloc(sizeof(struct ball));
     pBall->x = pBall->y = pBall->vy = pBall->vx = 0; //initierar alla värden till 0
-    strcpy(resources/ball0.png, "resources/ball0.png");
+    strcpy(pBall->currentBallImage[0], "resources/ball0.png");
     SDL_Surface *pSurface = IMG_Load(pBall->currentBallImage[0]);
     if(!pSurface) {
         printf("Error: %s\n", SDL_GetError());
         return NULL; //använd NULL istället för 0 i funktioner som returnerar pekare
     }
     return pBall;
+}
+void destroyBall(Ball *pBall) {
+    free(pBall);
 }

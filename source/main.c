@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
-//#include "ball.h"
+#include "../include/ball.h"
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900
 #define MOVEMENT_SPEED 400
@@ -13,12 +13,12 @@ typedef struct game {
 }Game;
 
 int initiate(Game *pGame);
-void exit(Game *pGame);
+void close(Game *pGame);
 
-int main() {
+int main(int argv, char** args) {
     Game g = {0};
     if(!initiate(&g)) return 1;
-    run(&g);
+    //run(&g);
     exit(&g);
     
     return 0;
@@ -58,12 +58,13 @@ int initiate(Game *pGame) {
     return 1;
 }
 
-void exit(Game *pGame) {
+void close(Game *pGame) {
     if(pGame->pBall) destroyBall(pGame->pBall);
     /*for(int i=0;i<MAX_ASTEROIDS;i++){
         if(pGame->pAsteroids[i]) destroyAsteroid(pGame->pAsteroids[i]);
     }*/
     //if(pGame->pAsteroidImage) destroyAsteroidImage(pGame->pAsteroidImage);
+    if(pGame->pBall) destroyBall(pGame->pBall);
     if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
     SDL_Quit();
