@@ -1,162 +1,70 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+//#include "ball.h"
+#define WINDOW_WIDTH 1600
+#define WINDOW_HEIGHT 900
+#define MOVEMENT_SPEED 400
 
-#define SPEED 100
-#define WINDOW_WIDTH 600
-#define WINDOW_HEIGHT 400
 
-int main(int argv, char** args){
-    if(SDL_Init(SDL_INIT_VIDEO)!=0){
-        printf("Error: %s\n",SDL_GetError());
-        return 1;
-    }
+typedef struct game {
+    SDL_Window *pWindow;
+    SDL_Renderer *pRenderer;
+    Ball *pBall;
+}Game;
 
-    SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
-    if(!pWindow){
-        printf("Error: %s\n",SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-    SDL_Renderer *pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
-    if(!pRenderer){
-        printf("Error: %s\n",SDL_GetError());
-        SDL_DestroyWindow(pWindow);
-        SDL_Quit();
-        return 1;    
-    }
+int initiate(Game *pGame);
+void exit(Game *pGame);
 
+int main() {
+    Game g = {0};
+    if(!initiate(&g)) return 1;
+    run(&g);
+    exit(&g);
     
-    SDL_Surface *backgroundSurface = IMG_Load("resources/field.png");
-    if(!backgroundSurface){
-        printf("Error: %s\n",SDL_GetError());
-        SDL_DestroyRenderer(pRenderer);
-        SDL_DestroyWindow(pWindow);
-        SDL_Quit();
-        return 1;    
-    }
-
-    SDL_Texture *backgroundTexture = SDL_CreateTextureFromSurface(pRenderer, backgroundSurface);
-    SDL_FreeSurface(backgroundSurface);
-    if(!backgroundTexture){
-        printf("Error: %s\n",SDL_GetError());
-        SDL_DestroyRenderer(pRenderer);
-        SDL_DestroyWindow(pWindow);
-        SDL_Quit();
-        return 1;    
-    }
-
-    SDL_Surface *pSurface = IMG_Load("resources/ship.png");
-    if(!pSurface){
-        printf("Error: %s\n",SDL_GetError());
-        SDL_DestroyRenderer(pRenderer);
-        SDL_DestroyWindow(pWindow);
-        SDL_Quit();
-        return 1;    
-    }
-    SDL_Texture *pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
-    SDL_FreeSurface(pSurface);
-    if(!pTexture){
-        printf("Error: %s\n",SDL_GetError());
-        SDL_DestroyRenderer(pRenderer);
-        SDL_DestroyWindow(pWindow);
-        SDL_Quit();
-        return 1;    
-    }
-
-    SDL_Rect shipRect;
-    SDL_QueryTexture(pTexture,NULL,NULL,&shipRect.w,&shipRect.h);
-    shipRect.w/=4;
-    shipRect.h/=4;
-    float shipX = (WINDOW_WIDTH - shipRect.w)/2;//left side
-    float shipY = (WINDOW_HEIGHT - shipRect.h)/2;//upper side
-    float shipVelocityX = 0;//unit: pixels/s
-    float shipVelocityY = 0;
-
-    bool closeWindow = false;
-    bool up,down,left,right;
-    up = down = left = right = false;
-
-    while(!closeWindow){
-
-        SDL_Event event;
-        while(SDL_PollEvent(&event)){
-            switch(event.type){
-                case SDL_QUIT:
-                    closeWindow = true;
-                    break;
-                case SDL_KEYDOWN:
-                    switch(event.key.keysym.scancode){
-                        case SDL_SCANCODE_W:
-                        case SDL_SCANCODE_UP:
-                            up=true;
-                            break;
-                        case SDL_SCANCODE_A:
-                        case SDL_SCANCODE_LEFT:
-                            left=true;
-                            break;
-                        case SDL_SCANCODE_S:
-                        case SDL_SCANCODE_DOWN:
-                            down=true;
-                            break;
-                        case SDL_SCANCODE_D:
-                        case SDL_SCANCODE_RIGHT:
-                            right=true;
-                            break;
-                    }
-                    break;
-                case SDL_KEYUP:
-                    switch(event.key.keysym.scancode){
-                        case SDL_SCANCODE_W:
-                        case SDL_SCANCODE_UP:
-                            up=false;
-                        break;
-                        case SDL_SCANCODE_A:
-                        case SDL_SCANCODE_LEFT:
-                            left=false;
-                        break;
-                        case SDL_SCANCODE_S:
-                        case SDL_SCANCODE_DOWN:
-                            down=false;
-                        break;
-                        case SDL_SCANCODE_D:
-                        case SDL_SCANCODE_RIGHT:
-                            right=false;
-                        break;
-                    }
-                    break;
-            }
-        }
-
-        shipVelocityX = shipVelocityY = 0;
-        if(up && !down) shipVelocityY = -SPEED;
-        if(down && !up) shipVelocityY = SPEED;
-        if(left && !right) shipVelocityX = -SPEED;
-        if(right && !left) shipVelocityX = SPEED;
-        shipX += shipVelocityX/60;//60 frames/s
-        shipY += shipVelocityY/60;
-        if(shipX<0) shipX=0;
-        if(shipY<0) shipY=0;
-        if(shipX>WINDOW_WIDTH-shipRect.w) shipX = WINDOW_WIDTH-shipRect.w;
-        if(shipY>WINDOW_HEIGHT-shipRect.h) shipY = WINDOW_HEIGHT-shipRect.h;
-        shipRect.x = shipX;
-        shipRect.y = shipY;
-
-        // Render background
-        SDL_RenderCopy(pRenderer, backgroundTexture, NULL, NULL);
-
-        // Render ship
-        SDL_RenderCopy(pRenderer,pTexture,NULL,&shipRect);
-
-        SDL_RenderPresent(pRenderer);
-        SDL_Delay(1000/60);//60 frames/s
-    }
-
-    SDL_DestroyTexture(pTexture);
-    SDL_DestroyRenderer(pRenderer);
-    SDL_DestroyWindow(pWindow);
-
-    SDL_Quit();
     return 0;
+}
+
+int initiate(Game *pGame) {
+    if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
+        printf("Error: %s\n",SDL_GetError());
+        return 0;
+    }
+    pGame->pWindow = SDL_CreateWindow("Rocket Game",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
+    if(!pGame->pWindow){
+        printf("Error: %s\n",SDL_GetError());
+        close(pGame);
+        return 0;
+    }
+    pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
+    if(!pGame->pRenderer){
+        printf("Error: %s\n",SDL_GetError());
+        close(pGame);
+        return 0;    
+    }
+
+    pGame->pBall = createBall(pGame->pRenderer);
+    //pGame->pPlayer = createAsteroidImage(pGame->pRenderer);
+
+    if(!pGame->pBall /*|| !pGame->pPlayer*/){
+        printf("Error: %s\n",SDL_GetError());
+        close(pGame);
+        return 0;
+    }
+
+    /*for(int i=0;i<NROFPLAYERS;i++){
+        pGame->pAsteroids[i] = createAsteroid(pGame->pAsteroidImage,WINDOW_WIDTH,WINDOW_HEIGHT);
+    }*/
+
+    return 1;
+}
+
+void exit(Game *pGame) {
+    if(pGame->pBall) destroyBall(pGame->pBall);
+    /*for(int i=0;i<MAX_ASTEROIDS;i++){
+        if(pGame->pAsteroids[i]) destroyAsteroid(pGame->pAsteroids[i]);
+    }*/
+    //if(pGame->pAsteroidImage) destroyAsteroidImage(pGame->pAsteroidImage);
+    if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
+    if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
+    SDL_Quit();
 }
