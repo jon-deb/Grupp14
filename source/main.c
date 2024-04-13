@@ -1,72 +1,73 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include "../include/ball.h"
-#define WINDOW_WIDTH 1600
-#define WINDOW_HEIGHT 900
-#define MOVEMENT_SPEED 400
+#include "../include/player.h"
 
+#define WINDOW_WIDTH 1760
+#define WINDOW_HEIGHT 990
 
 typedef struct game {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Ball *pBall;
     SDL_Texture *backgroundTexture;
+    Player *pPlayer;
 }Game;
 
 int initiate(Game *pGame);
-void close(Game *pGame);
+void closeGame(Game *pGame);
+void run(Game *pGame);
+void handleInput(Game *pGame, SDL_Event *event);
 
-int main(int argv, char** args) {
+int main(int argc, char** argv) {
     Game g = {0};
-    if(!initiate(&g)) return 1;
-    //run(&g);
-    exit(&g);
+    if (!initiate(&g)) return 1;
+    run(&g);
+    closeGame(&g);
     
     return 0;
 }
 
 int initiate(Game *pGame) {
-    if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
-        printf("Error: %s\n",SDL_GetError());
+    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
+        printf("Error: %s\n", SDL_GetError());
         return 0;
     }
-    pGame->pWindow = SDL_CreateWindow("Rocket Game",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
-    if(!pGame->pWindow){
-        printf("Error: %s\n",SDL_GetError());
-        close(pGame);
+    pGame->pWindow = SDL_CreateWindow("Football Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    if (!pGame->pWindow) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame);
         return 0;
     }
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
-    if(!pGame->pRenderer){
-        printf("Error: %s\n",SDL_GetError());
-        close(pGame);
+    if (!pGame->pRenderer) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame);
         return 0;    
     }
-
-
     SDL_Surface *backgroundSurface = IMG_Load("resources/field.png");
-    if(!backgroundSurface){
-        printf("Error: %s\n",SDL_GetError());
-        close(pGame);
+    if (!backgroundSurface) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame);
         return 0;    
     }
-
-    SDL_Texture *backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, backgroundSurface);
+    pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, backgroundSurface);
     SDL_FreeSurface(backgroundSurface);
-    if(!backgroundTexture){
-        printf("Error: %s\n",SDL_GetError());
-        close(pGame);
+    if (!pGame->backgroundTexture) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame);
         return 0;    
     }
-
-    pGame->pBall = createBall(pGame->pRenderer);
+    pGame->pPlayer = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    //pGame->pBall = createBall(pGame->pRenderer);
     //pGame->pPlayer = createAsteroidImage(pGame->pRenderer);
 
-    if(!pGame->pBall /*|| !pGame->pPlayer*/){
+    /*if(!pGame->pBall /*|| !pGame->pPlayer){
         printf("Error: %s\n",SDL_GetError());
         close(pGame);
         return 0;
-    }
+    }*/
 
     /*for(int i=0;i<NROFPLAYERS;i++){
         pGame->pAsteroids[i] = createAsteroid(pGame->pAsteroidImage,WINDOW_WIDTH,WINDOW_HEIGHT);
@@ -75,14 +76,81 @@ int initiate(Game *pGame) {
     return 1;
 }
 
-void close(Game *pGame) {
-    if(pGame->pBall) destroyBall(pGame->pBall);
+void run(Game *pGame) {
+    int close_requested = 0;
+    SDL_Event event;
+
+    while (!close_requested) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) close_requested = 1;
+            else handleInput(pGame, &event);
+        }
+        //updateBall(pGame->pBall);
+        setPlayerX(pGame->pPlayer);
+        setPlayerY(pGame->pPlayer);
+        SDL_Rect playerRect = getPlayerRect(pGame->pPlayer);
+        SDL_Texture *playerTexture;
+        (playerTexture) = getPlayerTexture(pGame->pPlayer);
+        SDL_RenderClear(pGame->pRenderer);
+        SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
+        SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
+        SDL_RenderPresent(pGame->pRenderer);
+        SDL_Delay(1000/60 - 15);
+    }
+}
+
+void handleInput(Game *pGame, SDL_Event *event) {
+    switch (event->type) {
+        case SDL_KEYDOWN:
+            switch (event->key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                case SDL_SCANCODE_UP:
+                    updatePlayerVUp(pGame->pPlayer);
+                    break;
+                case SDL_SCANCODE_S:
+                case SDL_SCANCODE_DOWN:
+                    updatePlayerVDown(pGame->pPlayer);
+                    break;
+                case SDL_SCANCODE_A:
+                case SDL_SCANCODE_LEFT:
+                    updatePlayerVLeft(pGame->pPlayer);
+                    break;
+                case SDL_SCANCODE_D:
+                case SDL_SCANCODE_RIGHT:
+                    updatePlayerVRight(pGame->pPlayer);
+                    break;
+            }
+            break;
+        case SDL_KEYUP:
+            switch (event->key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                case SDL_SCANCODE_UP:
+                    if (!getPlayerSpeedY(pGame->pPlayer)) resetPlayerSpeed(pGame->pPlayer, 0, 1);
+                    break;
+                case SDL_SCANCODE_S:
+                case SDL_SCANCODE_DOWN:
+                    if (getPlayerSpeedY(pGame->pPlayer)) resetPlayerSpeed(pGame->pPlayer, 0, 1);
+                    break;
+                case SDL_SCANCODE_A:
+                case SDL_SCANCODE_LEFT:
+                    if (!getPlayerSpeedX(pGame->pPlayer)) resetPlayerSpeed(pGame->pPlayer, 1, 0);
+                    break;
+                case SDL_SCANCODE_D:
+                case SDL_SCANCODE_RIGHT:
+                    if (getPlayerSpeedX(pGame->pPlayer)) resetPlayerSpeed(pGame->pPlayer, 1, 0);
+                    break;
+            }
+            break;
+    }
+}
+
+void closeGame(Game *pGame) {
+    if (pGame->pBall) destroyBall(pGame->pBall);
     /*for(int i=0;i<MAX_ASTEROIDS;i++){
         if(pGame->pAsteroids[i]) destroyAsteroid(pGame->pAsteroids[i]);
     }*/
     //if(pGame->pAsteroidImage) destroyAsteroidImage(pGame->pAsteroidImage);
-    if(pGame->pBall) destroyBall(pGame->pBall);
-    if(pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
-    if(pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
+    if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
+    if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
     SDL_Quit();
 }
