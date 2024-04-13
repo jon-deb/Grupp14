@@ -1,21 +1,24 @@
-# Makefile for Windows
 SRCDIR=./source
 INCDIR=./include
-CC=gcc
-INCLUDE = C:\msys64\mingw64\include\SDL2
+CC=gcc-13
+INCLUDE=/usr/local/include
+SDL_IMAGE_INCLUDE1=/usr/local/Cellar/sdl2_image/2.8.2_1/include/SDL2/   # First path
+SDL_IMAGE_INCLUDE2=/usr/local/include/SDL2/                           # Second path
 
-CFLAGS = -g -I$(INCLUDE) -c 
-LDFLAGS = -lmingw32 -lSDL2main -lSDL2_image -lSDL2 -mwindows -lm
+CFLAGS=-g -I$(INCLUDE) -I$(SDL_IMAGE_INCLUDE1) -I$(SDL_IMAGE_INCLUDE2) -c
+LIBS=/usr/local/lib
+LDFLAGS=-lSDL2main -lSDL2_image -lSDL2
 
-footballGame: main.o ball.o
-	$(CC) -o footballGame main.o ball.o $(LDFLAGS)
+simpleSDLexample1: main.o ball.o
+	$(CC) main.o ball.o -o simpleSDLexample2 $(LDFLAGS) -L$(LIBS)
 
 main.o: $(SRCDIR)/main.c
-	$(CC) $(CFLAGS) $(SRCDIR)/main.c
+	$(CC) $(CFLAGS) $(SRCDIR)/main.c -o main.o
 
 ball.o: $(SRCDIR)/ball.c $(INCDIR)/ball.h
-	$(CC) $(CFLAGS) $(SRCDIR)/ball.c
+	$(CC) $(CFLAGS) $(SRCDIR)/ball.c -o ball.o
 
 clean:
-	rm *.exe
-	rm *.o
+	rm -f simpleSDLexample2
+	rm -f main.o
+	rm -f ball.o

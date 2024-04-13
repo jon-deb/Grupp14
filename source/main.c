@@ -3,8 +3,8 @@
 #include <SDL2/SDL_image.h>
 #include "../include/ball.h"
 
-#define WINDOW_WIDTH 1600
-#define WINDOW_HEIGHT 900
+#define WINDOW_WIDTH 1400
+#define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
 
 typedef struct game {
