@@ -1,11 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "../include/ball.h"
 #include "../include/player.h"
 
-#define WINDOW_WIDTH 1760
-#define WINDOW_HEIGHT 990
+#define WINDOW_WIDTH 1400
+#define WINDOW_HEIGHT 800
+#define MOVEMENT_SPEED 400
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -16,8 +19,8 @@ typedef struct game {
 }Game;
 
 int initiate(Game *pGame);
-void closeGame(Game *pGame);
 void run(Game *pGame);
+void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
 
 int main(int argc, char** argv) {
@@ -59,20 +62,16 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
+
     pGame->pPlayer = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
-    //pGame->pBall = createBall(pGame->pRenderer);
-    //pGame->pPlayer = createAsteroidImage(pGame->pRenderer);
 
-    /*if(!pGame->pBall /*|| !pGame->pPlayer){
-        printf("Error: %s\n",SDL_GetError());
-        close(pGame);
+    // Initialize the ball
+    pGame->pBall = createBall(pGame->pRenderer);
+    if (!pGame->pBall) {
+        printf("Error initializing the ball.\n");
+        closeGame(pGame);
         return 0;
-    }*/
-
-    /*for(int i=0;i<NROFPLAYERS;i++){
-        pGame->pAsteroids[i] = createAsteroid(pGame->pAsteroidImage,WINDOW_WIDTH,WINDOW_HEIGHT);
-    }*/
-
+    }
     return 1;
 }
 
@@ -85,7 +84,6 @@ void run(Game *pGame) {
             if (event.type == SDL_QUIT) close_requested = 1;
             else handleInput(pGame, &event);
         }
-        //updateBall(pGame->pBall);
         setPlayerX(pGame->pPlayer);
         setPlayerY(pGame->pPlayer);
         SDL_Rect playerRect = getPlayerRect(pGame->pPlayer);
@@ -94,7 +92,9 @@ void run(Game *pGame) {
         SDL_RenderClear(pGame->pRenderer);
         SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
         SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
+        SDL_RenderCopy(pGame->pRenderer, pGame->pBall->texture, NULL, &pGame->pBall->rect);
         SDL_RenderPresent(pGame->pRenderer);
+        updateBallPosition(pGame->pBall);
         SDL_Delay(1000/60 - 15);
     }
 }
@@ -146,10 +146,6 @@ void handleInput(Game *pGame, SDL_Event *event) {
 
 void closeGame(Game *pGame) {
     if (pGame->pBall) destroyBall(pGame->pBall);
-    /*for(int i=0;i<MAX_ASTEROIDS;i++){
-        if(pGame->pAsteroids[i]) destroyAsteroid(pGame->pAsteroids[i]);
-    }*/
-    //if(pGame->pAsteroidImage) destroyAsteroidImage(pGame->pAsteroidImage);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
     SDL_Quit();

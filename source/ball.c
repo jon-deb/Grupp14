@@ -1,53 +1,51 @@
-#include <SDL2/SDL.h>
-#include <SDL_image.h>
 #include "../include/ball.h"
+#include <SDL2/SDL_image.h>
 
-struct ball{
-    float x, y, vx, vy; //koordinater samt hastighet i y- och x-led
-    int hasCollided;
-    SDL_Texture *ballTextures[BALL_FRAMES];
-};
 
-Ball *createBall(SDL_Renderer *pRenderer) {
-    Ball *pBall = malloc(sizeof(struct ball));
-    pBall->x = pBall->y = pBall->vy = pBall->vx = 0; //initierar alla värden till 0
-    strcpy(pBall->ballTextures[0], "resources/ball0.png");
-    SDL_Surface *pSurface = IMG_Load(pBall->ballTextures[0]);
-    if(!pSurface) {
-        printf("Error: %s\n", SDL_GetError());
-        return NULL; //använd NULL istället för 0 i funktioner som returnerar pekare
+#define WINDOW_WIDTH 1400
+#define WINDOW_HEIGHT 800
+#define MOVEMENT_SPEED 400
+
+
+Ball *createBall(SDL_Renderer *renderer) {
+    Ball *ball = malloc(sizeof(Ball));
+    if (!ball) {
+        fprintf(stderr, "Failed to allocate memory for ball.\n");
+        return NULL;
     }
-    return pBall;
-}
-void destroyBall(Ball *pBall) {
-    free(pBall);
-}
-void updateBall(Ball *pBall) {
-    for (int i = 0; i < BALL_FRAMES; ++i) {
-        char filename[50];
-        sprintf(filename, "resources/ball%d.png", i + 1);
-        SDL_Surface *ballSurface = IMG_Load(filename);
-        if (!ballSurface) {
-            printf("Error: %s\n", SDL_GetError());
-            for (int j = 0; j < i; ++j) {
-                SDL_DestroyTexture(pBall->ballTextures[j]);
-            }
-            SDL_DestroyRenderer(pRenderer);
-            SDL_DestroyWindow(pWindow);
-            SDL_Quit();
-            return 1;
-        }
-        pBall->ballTextures[i] = SDL_CreateTextureFromSurface(pRenderer, ballSurface);
-        SDL_FreeSurface(ballSurface);
-        if (!ballTextures[i]) {
-            printf("Error: %s\n", SDL_GetError());
-            for (int j = 0; j < i; ++j) {
-                SDL_DestroyTexture(pBall->ballTextures[j]);
-            }
-            SDL_DestroyRenderer(pRenderer);
-            SDL_DestroyWindow(pWindow);
-            SDL_Quit();
-            return 1;
-        }
+
+    SDL_Surface *ballSurface = IMG_Load("resources/ball1.png");
+    if (!ballSurface) {
+        fprintf(stderr, "Error loading ball texture: %s\n", SDL_GetError());
+        free(ball);
+        return NULL;
     }
+
+    ball->texture = SDL_CreateTextureFromSurface(renderer, ballSurface);
+    SDL_FreeSurface(ballSurface);
+    if (!ball->texture) {
+        fprintf(stderr, "Error creating ball texture: %s\n", SDL_GetError());
+        free(ball);
+        return NULL;
+    }
+
+    ball->rect.w = 32;
+    ball->rect.h = 32;
+    ball->rect.x = WINDOW_HEIGHT / 4;
+    ball->rect.y = WINDOW_HEIGHT / 4; 
+    ball->velocityX = 0;
+    ball->velocityY = 0;
+    ball->collided = false;
+
+    return ball;
+}
+
+void updateBallPosition(Ball *ball) {
+    ball->rect.x += ball->velocityX / 60;
+    ball->rect.y += ball->velocityY / 60;
+}
+
+void destroyBall(Ball *ball) {
+    if (ball->texture) SDL_DestroyTexture(ball->texture);
+    free(ball);
 }
