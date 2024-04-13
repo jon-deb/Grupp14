@@ -1,9 +1,19 @@
-#ifndef ball_h
-#define ball_h
+#ifndef BALL_H
+#define BALL_H
 
-typedef struct ball Ball;
+#include <stdbool.h>
+#include <SDL2/SDL.h>
 
-Ball *createBall(SDL_Renderer *pRenderer);
-void destroyBall(Ball *pBall);
+typedef struct ball {
+    SDL_Texture *texture;
+    SDL_Rect rect;
+    float velocityX;
+    float velocityY;
+    bool collided;
+} Ball;
 
-#endif
+Ball *createBall(SDL_Renderer *renderer);
+void updateBallPosition(Ball *ball);
+void destroyBall(Ball *ball);
+
+#endif /* BALL_H */
