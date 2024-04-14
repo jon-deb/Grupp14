@@ -81,14 +81,6 @@ void setBallY(Ball *ball, int y) {
     ball->rect.y = y;
 }
 
-void applyFriction(Ball *pBall) {
-    // skapar variabel och sätter till hastigheterna
-    float vx = pBall->velocityX;
-    float vy = pBall->velocityY;
-    
-    // sänker hastigheten 
-    vx *= FRICTION_COEFFICIENT;
-    vy *= FRICTION_COEFFICIENT;
 
 void applyFriction(Ball *pBall) {
     // skapar variabel och sätter till hastigheterna

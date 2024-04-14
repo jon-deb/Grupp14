@@ -241,5 +241,11 @@ void restrictBallWithinWindow(Ball *pBall) {
         pBall->velocityY = -pBall->velocityY;
         hitHorizontalWall = true;
     }
+
+    // Optional: Handle the collision response if needed
+    if (hitVerticalWall || hitHorizontalWall) {
+        // You might want to add special effects or scoring logic here
+    }
 }
+
 

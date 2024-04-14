@@ -3,7 +3,6 @@
 
 #include <SDL2/SDL.h>
 #include <stdbool.h>
-#define FRICTION_COEFFICIENT 0.95f
 
 typedef struct ball {
     SDL_Texture *texture;
@@ -23,6 +22,5 @@ void setBallVelocity(Ball *ball, float velocityX, float velocityY);
 void setBallX(Ball *ball, int x);
 void setBallY(Ball *ball, int y);
 void applyFriction(Ball *pBall);
-
 
 #endif /* BALL_H */
