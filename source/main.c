@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "../include/ball.h"
@@ -9,6 +10,7 @@
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
+#define BALL_SPEED_AFTER_COLLISION 500
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -22,6 +24,7 @@ int initiate(Game *pGame);
 void run(Game *pGame);
 void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
+bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 
 int main(int argc, char** argv) {
     Game g = {0};
@@ -92,6 +95,33 @@ void run(Game *pGame) {
         SDL_Rect ballRect = getBallRect(pGame->pBall);
         SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
 
+
+        if(checkCollision(playerRect, ballRect)) {
+
+            // räknar mittpunkten för spelare och bollen
+            float playerCenterX = playerRect.x + playerRect.w / 2;
+            float playerCenterY = playerRect.y + playerRect.h / 2;
+            float ballCenterX = ballRect.x + ballRect.w / 2;
+            float ballCenterY = ballRect.y + ballRect.h / 2;
+
+            // beräknar vektorn
+            float collisionVectorX = ballCenterX - playerCenterX;
+            float collisionVectorY = ballCenterY - playerCenterY;
+            
+            // räknar distansen
+
+            float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
+
+            float normalX = collisionVectorX/ distance;
+            float normalY = collisionVectorY / distance;
+
+            // update på hastigheten efter collision
+            setBallVelocity(pGame->pBall, normalX* BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
+
+
+
+        }
+
         SDL_RenderClear(pGame->pRenderer);
         SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
         SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
@@ -147,6 +177,17 @@ void handleInput(Game *pGame, SDL_Event *event) {
             break;
     }
 }
+
+bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
+    // kod som kontrollerar om två rektanglar överlappar varandra,
+    if (rect1.y + rect1.h <= rect2.y) return false; // Kontrollerar nedre kant av rect1
+    if (rect1.y >= rect2.y + rect2.h) return false; // Kontrollerar övre kant av rect1
+    if (rect1.x + rect1.w <= rect2.x) return false; // Kontrollerar högra kant av rect1
+    if (rect1.x >= rect2.x + rect2.w) return false; // Kontrollerar vänstra kant av rect1
+    
+    return true;
+}
+
 
 void closeGame(Game *pGame) {
     if (pGame->pBall) destroyBall(pGame->pBall);
