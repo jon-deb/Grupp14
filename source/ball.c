@@ -6,8 +6,9 @@
 #define MOVEMENT_SPEED 400
 
 typedef struct ball {
-    SDL_Texture *balltexture;
-    SDL_Rect ballRect;
+    SDL_Texture *texture;
+    SDL_Rect rect;
+    SDL_Surface *surface;
     float velocityX;
     float velocityY;
     bool collided;
@@ -20,25 +21,25 @@ Ball *createBall(SDL_Renderer *renderer) {
         return NULL;
     }
 
-    SDL_Surface *ballSurface = IMG_Load("resources/ball1.png");
-    if (!ballSurface) {
+    ball->surface = IMG_Load("resources/ball1.png");
+    if (!ball->surface) {
         fprintf(stderr, "Error loading ball texture: %s\n", SDL_GetError());
         free(ball);
         return NULL;
     }
 
-    ball->balltexture = SDL_CreateTextureFromSurface(renderer, ballSurface);
-    SDL_FreeSurface(ballSurface);
-    if (!ball->balltexture) {
+    ball->texture = SDL_CreateTextureFromSurface(renderer, ball->surface);
+    SDL_FreeSurface(ball->surface);
+    if (!ball->texture) {
         fprintf(stderr, "Error creating ball texture: %s\n", SDL_GetError());
         free(ball);
         return NULL;
     }
 
-    ball->ballRect.w = 32;
-    ball->ballRect.h = 32;
-    ball->ballRect.x = WINDOW_HEIGHT / 4;
-    ball->ballRect.y = WINDOW_HEIGHT / 4; 
+    ball->rect.w = 32;
+    ball->rect.h = 32;
+    ball->rect.x = WINDOW_HEIGHT / 4;
+    ball->rect.y = WINDOW_HEIGHT / 4; 
     ball->velocityX = 0;
     ball->velocityY = 0;
     ball->collided = false;
@@ -47,21 +48,21 @@ Ball *createBall(SDL_Renderer *renderer) {
 }
 
 void updateBallPosition(Ball *ball) {
-    ball->ballRect.x += ball->velocityX / 60;
-    ball->ballRect.y += ball->velocityY / 60;
+    ball->rect.x += ball->velocityX / 60;
+    ball->rect.y += ball->velocityY / 60;
 }
 
 void destroyBall(Ball *ball) {
-    if (ball->balltexture) SDL_DestroyTexture(ball->balltexture);
+    if (ball->texture) SDL_DestroyTexture(ball->texture);
     free(ball);
 }
 
 SDL_Texture *getBallTexture(Ball *ball) {
-    return ball->balltexture;
+    return ball->texture;
 }
 
 SDL_Rect getBallRect(Ball *ball) {
-    return ball->ballRect;
+    return ball->rect;
 }
 
 
