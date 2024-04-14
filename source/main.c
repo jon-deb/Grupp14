@@ -16,7 +16,7 @@ typedef struct game {
     Ball *pBall;
     SDL_Texture *backgroundTexture;
     Player *pPlayer;
-}Game;
+} Game;
 
 int initiate(Game *pGame);
 void run(Game *pGame);
@@ -87,15 +87,19 @@ void run(Game *pGame) {
         setPlayerX(pGame->pPlayer);
         setPlayerY(pGame->pPlayer);
         SDL_Rect playerRect = getPlayerRect(pGame->pPlayer);
-        SDL_Texture *playerTexture;
-        (playerTexture) = getPlayerTexture(pGame->pPlayer);
+        SDL_Texture *playerTexture = getPlayerTexture(pGame->pPlayer);
+
+        SDL_Rect ballRect = getBallRect(pGame->pBall);
+        SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
+
         SDL_RenderClear(pGame->pRenderer);
         SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
         SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
-        SDL_RenderCopy(pGame->pRenderer, pGame->pBall->texture, NULL, &pGame->pBall->rect);
+        SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
         SDL_RenderPresent(pGame->pRenderer);
-        updateBallPosition(pGame->pBall);
+        
         SDL_Delay(1000/60 - 15);
+        updateBallPosition(pGame->pBall);
     }
 }
 
