@@ -65,3 +65,8 @@ SDL_Rect getBallRect(Ball *ball) {
 }
 
 
+void getBallVelocity(Ball *pBall, float *pSpeedX, float *pSpeedY) {
+    *pSpeedX = pBall->velocityX;
+    *pSpeedY = pBall->velocityY;
+}
+
