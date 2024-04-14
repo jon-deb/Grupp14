@@ -13,6 +13,7 @@
 #define BALL_SPEED_AFTER_COLLISION 500
 #define BORDER_SIZE 20 // Adjust this value as needed
 
+
 typedef struct game {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
@@ -81,6 +82,9 @@ int initiate(Game *pGame) {
     return 1;
 }
 
+
+
+
 void run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
@@ -118,6 +122,8 @@ void run(Game *pGame) {
             setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
 
+        
+        applyFriction(pGame->pBall); // funktion för att sakta ner bollen
         // Clear the renderer
         SDL_RenderClear(pGame->pRenderer);
         // Draw background

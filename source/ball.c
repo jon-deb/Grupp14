@@ -4,6 +4,19 @@
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
+#define FRICTION_COEFFICIENT 0.95f
+
+/*
+typedef struct ball {
+    SDL_Texture *texture;
+    SDL_Rect rect;
+    SDL_Surface *surface;
+    float velocityX;
+    float velocityY;
+    bool collided;
+} Ball;
+
+*/
 
 Ball *createBall(SDL_Renderer *renderer) {
     Ball *ball = malloc(sizeof(Ball));
@@ -69,4 +82,15 @@ void setBallY(Ball *ball, int y) {
     ball->rect.y = y;
 }
 
+void applyFriction(Ball *pBall) {
+    // skapar variabel och sätter till hastigheterna
+    float vx = pBall->velocityX;
+    float vy = pBall->velocityY;
+    
+    // sänker hastigheten 
+    vx *= FRICTION_COEFFICIENT;
+    vy *= FRICTION_COEFFICIENT;
 
+    // ny hastighet
+    setBallVelocity(pBall, vx, vy);
+}
