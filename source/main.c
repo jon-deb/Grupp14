@@ -209,12 +209,30 @@ void restrictPlayerWithinWindow(Player *pPlayer) {
 }
 
 void restrictBallWithinWindow(Ball *pBall) {
-    // Ensure ball stays within window boundaries
     SDL_Rect ballRect = getBallRect(pBall);
-    if (ballRect.x < 0) setBallX(pBall, 0); // Add the x position argument
-    if (ballRect.x + ballRect.w > WINDOW_WIDTH) setBallX(pBall, WINDOW_WIDTH - ballRect.w); // Add the x position argument
-    if (ballRect.y < 0) setBallY(pBall, 0); // Add the y position argument
-    if (ballRect.y + ballRect.h > WINDOW_HEIGHT) setBallY(pBall, WINDOW_HEIGHT - ballRect.h); // Add the y position argument
+
+    bool hitVerticalWall = false;
+    bool hitHorizontalWall = false;
+
+    // Check for collision with left or right walls
+    if (ballRect.x < 0) {
+        setBallX(pBall, 0);
+        pBall->velocityX = -pBall->velocityX;
+        hitVerticalWall = true;
+    } else if (ballRect.x + ballRect.w > WINDOW_WIDTH) {
+        setBallX(pBall, WINDOW_WIDTH - ballRect.w);
+        pBall->velocityX = -pBall->velocityX;
+        hitVerticalWall = true;
+    }
+
+    // Check for collision with top or bottom walls
+    if (ballRect.y < 0) {
+        setBallY(pBall, 0);
+        pBall->velocityY = -pBall->velocityY;
+        hitHorizontalWall = true;
+    } else if (ballRect.y + ballRect.h > WINDOW_HEIGHT) {
+        setBallY(pBall, WINDOW_HEIGHT - ballRect.h);
+        pBall->velocityY = -pBall->velocityY;
+        hitHorizontalWall = true;
+    }
 }
-
-

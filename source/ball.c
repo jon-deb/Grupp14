@@ -5,15 +5,6 @@
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
 
-typedef struct ball {
-    SDL_Texture *texture;
-    SDL_Rect rect;
-    SDL_Surface *surface;
-    float velocityX;
-    float velocityY;
-    bool collided;
-} Ball;
-
 Ball *createBall(SDL_Renderer *renderer) {
     Ball *ball = malloc(sizeof(Ball));
     if (!ball) {

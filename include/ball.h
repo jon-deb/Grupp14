@@ -4,7 +4,14 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
-typedef struct ball Ball;
+typedef struct ball {
+    SDL_Texture *texture;
+    SDL_Rect rect;
+    SDL_Surface *surface;
+    float velocityX;
+    float velocityY;
+    bool collided;
+} Ball;
 
 Ball *createBall(SDL_Renderer *renderer);
 void updateBallPosition(Ball *ball);
@@ -14,6 +21,5 @@ SDL_Rect getBallRect(Ball *ball);
 void setBallVelocity(Ball *ball, float velocityX, float velocityY);
 void setBallX(Ball *ball, int x);
 void setBallY(Ball *ball, int y);
-
 
 #endif /* BALL_H */
