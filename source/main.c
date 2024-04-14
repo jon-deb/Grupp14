@@ -13,6 +13,7 @@
 #define BALL_SPEED_AFTER_COLLISION 500
 #define BORDER_SIZE 20 // Adjust this value as needed
 
+
 typedef struct game {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
@@ -81,6 +82,9 @@ int initiate(Game *pGame) {
     return 1;
 }
 
+
+
+
 void run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
@@ -99,25 +103,27 @@ void run(Game *pGame) {
         SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
 
         if(checkCollision(playerRect, ballRect)) {
-            // Calculate collision vector
+            // räknar mittpunkten för spelare och bollen
             float playerCenterX = playerRect.x + playerRect.w / 2;
             float playerCenterY = playerRect.y + playerRect.h / 2;
             float ballCenterX = ballRect.x + ballRect.w / 2;
             float ballCenterY = ballRect.y + ballRect.h / 2;
 
+            // beräknar vektorn
             float collisionVectorX = ballCenterX - playerCenterX;
             float collisionVectorY = ballCenterY - playerCenterY;
             
-            // Calculate distance
+            // räknar distansen
             float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
 
+            // normaliserar vektorn
             float normalX = collisionVectorX / distance;
             float normalY = collisionVectorY / distance;
 
-            // Update ball velocity after collision
+            // update på hastigheten efter collision
             setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
-
+        applyFriction(pGame->pBall); // funktion för att sakta ner bollen
         // Clear the renderer
         SDL_RenderClear(pGame->pRenderer);
         // Draw background
@@ -216,5 +222,4 @@ void restrictBallWithinWindow(Ball *pBall) {
     if (ballRect.y < 0) setBallY(pBall, 0); // Add the y position argument
     if (ballRect.y + ballRect.h > WINDOW_HEIGHT) setBallY(pBall, WINDOW_HEIGHT - ballRect.h); // Add the y position argument
 }
-
 
