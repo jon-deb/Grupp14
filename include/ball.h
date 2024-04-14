@@ -12,6 +12,8 @@ void destroyBall(Ball *ball);
 SDL_Texture *getBallTexture(Ball *ball);
 SDL_Rect getBallRect(Ball *ball);
 void setBallVelocity(Ball *ball, float velocityX, float velocityY);
-void setBallVelocity(Ball *ball, float velocityX, float velocityY);
+void setBallX(Ball *ball, int x);
+void setBallY(Ball *ball, int y);
+
 
 #endif /* BALL_H */

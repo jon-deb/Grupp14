@@ -65,8 +65,17 @@ SDL_Rect getBallRect(Ball *ball) {
     return ball->rect;
 }
 
-
 void setBallVelocity(Ball *ball, float velocityX, float velocityY) {
     ball->velocityX = velocityX;
     ball->velocityY = velocityY;
 }
+
+void setBallX(Ball *ball, int x) {
+    ball->rect.x = x;
+}
+
+void setBallY(Ball *ball, int y) {
+    ball->rect.y = y;
+}
+
+

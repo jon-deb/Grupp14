@@ -11,6 +11,7 @@
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
 #define BALL_SPEED_AFTER_COLLISION 500
+#define BORDER_SIZE 20 // Adjust this value as needed
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -25,6 +26,8 @@ void run(Game *pGame);
 void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
 bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
+void restrictPlayerWithinWindow(Player *pPlayer);
+void restrictBallWithinWindow(Ball *pBall);
 
 int main(int argc, char** argv) {
     Game g = {0};
@@ -95,41 +98,42 @@ void run(Game *pGame) {
         SDL_Rect ballRect = getBallRect(pGame->pBall);
         SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
 
-
         if(checkCollision(playerRect, ballRect)) {
-
-            // räknar mittpunkten för spelare och bollen
+            // Calculate collision vector
             float playerCenterX = playerRect.x + playerRect.w / 2;
             float playerCenterY = playerRect.y + playerRect.h / 2;
             float ballCenterX = ballRect.x + ballRect.w / 2;
             float ballCenterY = ballRect.y + ballRect.h / 2;
 
-            // beräknar vektorn
             float collisionVectorX = ballCenterX - playerCenterX;
             float collisionVectorY = ballCenterY - playerCenterY;
             
-            // räknar distansen
-
+            // Calculate distance
             float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
 
-            float normalX = collisionVectorX/ distance;
+            float normalX = collisionVectorX / distance;
             float normalY = collisionVectorY / distance;
 
-            // update på hastigheten efter collision
-            setBallVelocity(pGame->pBall, normalX* BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
-
-
-
+            // Update ball velocity after collision
+            setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
 
+        // Clear the renderer
         SDL_RenderClear(pGame->pRenderer);
+        // Draw background
         SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
+        // Draw player
         SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
+        // Draw ball
         SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
+        // Present the renderer
         SDL_RenderPresent(pGame->pRenderer);
         
         SDL_Delay(1000/60 - 15);
+        // Update ball position
         updateBallPosition(pGame->pBall);
+        // Ensure ball stays within window boundaries
+        restrictBallWithinWindow(pGame->pBall);
     }
 }
 
@@ -179,19 +183,38 @@ void handleInput(Game *pGame, SDL_Event *event) {
 }
 
 bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
-    // kod som kontrollerar om två rektanglar överlappar varandra,
-    if (rect1.y + rect1.h <= rect2.y) return false; // Kontrollerar nedre kant av rect1
-    if (rect1.y >= rect2.y + rect2.h) return false; // Kontrollerar övre kant av rect1
-    if (rect1.x + rect1.w <= rect2.x) return false; // Kontrollerar högra kant av rect1
-    if (rect1.x >= rect2.x + rect2.w) return false; // Kontrollerar vänstra kant av rect1
-    
-    return true;
+    // Check for collision between two rectangles
+    if (rect1.y + rect1.h <= rect2.y) return false; // Rect1 bottom is above Rect2 top
+    if (rect1.y >= rect2.y + rect2.h) return false; // Rect1 top is below Rect2 bottom
+    if (rect1.x + rect1.w <= rect2.x) return false; // Rect1 right is left of Rect2 left
+    if (rect1.x >= rect2.x + rect2.w) return false; // Rect1 left is right of Rect2 right
+    return true; // Collided
 }
 
-
 void closeGame(Game *pGame) {
+    // Clean up resources
     if (pGame->pBall) destroyBall(pGame->pBall);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
     SDL_Quit();
 }
+
+void restrictPlayerWithinWindow(Player *pPlayer) {
+    // Ensure player stays within window boundaries
+    SDL_Rect playerRect = getPlayerRect(pPlayer);
+    if (playerRect.x < 0) setPlayerX(pPlayer);
+    if (playerRect.x + playerRect.w > WINDOW_WIDTH) setPlayerX(pPlayer);
+    if (playerRect.y < 0) setPlayerY(pPlayer);
+    if (playerRect.y + playerRect.h > WINDOW_HEIGHT) setPlayerY(pPlayer);
+}
+
+void restrictBallWithinWindow(Ball *pBall) {
+    // Ensure ball stays within window boundaries
+    SDL_Rect ballRect = getBallRect(pBall);
+    if (ballRect.x < 0) setBallX(pBall, 0); // Add the x position argument
+    if (ballRect.x + ballRect.w > WINDOW_WIDTH) setBallX(pBall, WINDOW_WIDTH - ballRect.w); // Add the x position argument
+    if (ballRect.y < 0) setBallY(pBall, 0); // Add the y position argument
+    if (ballRect.y + ballRect.h > WINDOW_HEIGHT) setBallY(pBall, WINDOW_HEIGHT - ballRect.h); // Add the y position argument
+}
+
+
