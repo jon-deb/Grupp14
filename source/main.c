@@ -103,26 +103,26 @@ void run(Game *pGame) {
         SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
 
         if(checkCollision(playerRect, ballRect)) {
-            // Calculate collision vector
+            // räknar mittpunkten för spelare och bollen
             float playerCenterX = playerRect.x + playerRect.w / 2;
             float playerCenterY = playerRect.y + playerRect.h / 2;
             float ballCenterX = ballRect.x + ballRect.w / 2;
             float ballCenterY = ballRect.y + ballRect.h / 2;
 
+            // beräknar vektorn
             float collisionVectorX = ballCenterX - playerCenterX;
             float collisionVectorY = ballCenterY - playerCenterY;
             
-            // Calculate distance
+            // räknar distansen
             float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
 
+            // normaliserar vektorn
             float normalX = collisionVectorX / distance;
             float normalY = collisionVectorY / distance;
 
-            // Update ball velocity after collision
+            // update på hastigheten efter collision
             setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
-
-        
         applyFriction(pGame->pBall); // funktion för att sakta ner bollen
         // Clear the renderer
         SDL_RenderClear(pGame->pRenderer);
@@ -242,3 +242,4 @@ void restrictBallWithinWindow(Ball *pBall) {
         hitHorizontalWall = true;
     }
 }
+
