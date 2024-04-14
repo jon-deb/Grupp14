@@ -1,11 +1,17 @@
 #include "../include/ball.h"
 #include <SDL2/SDL_image.h>
 
-
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
 
+typedef struct ball {
+    SDL_Texture *balltexture;
+    SDL_Rect ballRect;
+    float velocityX;
+    float velocityY;
+    bool collided;
+} Ball;
 
 Ball *createBall(SDL_Renderer *renderer) {
     Ball *ball = malloc(sizeof(Ball));
@@ -21,18 +27,18 @@ Ball *createBall(SDL_Renderer *renderer) {
         return NULL;
     }
 
-    ball->texture = SDL_CreateTextureFromSurface(renderer, ballSurface);
+    ball->balltexture = SDL_CreateTextureFromSurface(renderer, ballSurface);
     SDL_FreeSurface(ballSurface);
-    if (!ball->texture) {
+    if (!ball->balltexture) {
         fprintf(stderr, "Error creating ball texture: %s\n", SDL_GetError());
         free(ball);
         return NULL;
     }
 
-    ball->rect.w = 32;
-    ball->rect.h = 32;
-    ball->rect.x = WINDOW_HEIGHT / 4;
-    ball->rect.y = WINDOW_HEIGHT / 4; 
+    ball->ballRect.w = 32;
+    ball->ballRect.h = 32;
+    ball->ballRect.x = WINDOW_HEIGHT / 4;
+    ball->ballRect.y = WINDOW_HEIGHT / 4; 
     ball->velocityX = 0;
     ball->velocityY = 0;
     ball->collided = false;
@@ -41,11 +47,21 @@ Ball *createBall(SDL_Renderer *renderer) {
 }
 
 void updateBallPosition(Ball *ball) {
-    ball->rect.x += ball->velocityX / 60;
-    ball->rect.y += ball->velocityY / 60;
+    ball->ballRect.x += ball->velocityX / 60;
+    ball->ballRect.y += ball->velocityY / 60;
 }
 
 void destroyBall(Ball *ball) {
-    if (ball->texture) SDL_DestroyTexture(ball->texture);
+    if (ball->balltexture) SDL_DestroyTexture(ball->balltexture);
     free(ball);
 }
+
+SDL_Texture *getBallTexture(Ball *ball) {
+    return ball->balltexture;
+}
+
+SDL_Rect getBallRect(Ball *ball) {
+    return ball->ballRect;
+}
+
+
