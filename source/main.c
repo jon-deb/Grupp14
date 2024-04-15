@@ -12,6 +12,8 @@
 #define MOVEMENT_SPEED 400
 #define BALL_SPEED_AFTER_COLLISION 500
 #define BORDER_SIZE 20 // Adjust this value as needed
+#define GOAL_TOP 352
+#define GOAL_BOTTOM 448
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -31,6 +33,7 @@ void restrictBallWithinWindow(Ball *pBall);
 void updatePlayerPosition(Player *pPlayer, float deltaTime);
 void renderGame(Game *pGame);
 void handleCollisionsAndPhysics(Game *pGame);
+bool goal(Ball *pBall);
 
 int main(int argc, char** argv) {
     Game g = {0};
@@ -152,7 +155,10 @@ void handleCollisionsAndPhysics(Game *pGame) {
         }
     applyFriction(pGame->pBall); // Slow down the ball
     updateBallPosition(pGame->pBall);
-    restrictBallWithinWindow(pGame->pBall);
+    if (!goal(pGame->pBall))
+        {
+            restrictBallWithinWindow(pGame->pBall);
+        }
 }
 
 void handleInput(Game *pGame, SDL_Event *event) {
@@ -243,4 +249,16 @@ void restrictBallWithinWindow(Ball *pBall) {
         setBallY(pBall, WINDOW_HEIGHT - ballRect.h);
         pBall->velocityY = -pBall->velocityY;
     }
+}
+
+bool goal(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, WINDOW_HEIGHT / 2 - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return true;
+    }
+    return false;
 }
