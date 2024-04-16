@@ -58,7 +58,7 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
-    SDL_Surface *backgroundSurface = IMG_Load("resources/field.png");
+    SDL_Surface *backgroundSurface = IMG_Load("resources/newfield.png");
     if (!backgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
