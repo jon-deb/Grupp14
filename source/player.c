@@ -45,46 +45,46 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h) {
 }
 
 
-void updatePlayerVelocity(Player *player, float vx, float vy) {
-    player->playerVelocityX = vx;
-    player->playerVelocityY = vy;
+void updatePlayerVelocity(Player *pPlayer, float vx, float vy) {
+    pPlayer->playerVelocityX = vx;
+    pPlayer->playerVelocityY = vy;
 }
 
-SDL_Texture *getPlayerTexture(Player *player) {
-    return player->playerTexture;
+SDL_Texture *getPlayerTexture(Player *pPlayer) {
+    return pPlayer->playerTexture;
 }
 
-SDL_Rect getPlayerRect(Player *player) {
-    return player->playerRect;
+SDL_Rect getPlayerRect(Player *pPlayer) {
+    return pPlayer->playerRect;
 }
 
-void updatePlayerVUp(Player *player) {
-    player->playerVelocityY = -MOVEMENT_SPEED;
+void updatePlayerVUp(Player *pPlayer) {
+    pPlayer->playerVelocityY = -MOVEMENT_SPEED;
 }
 
-void updatePlayerVDown(Player *player) {
-    player->playerVelocityY = MOVEMENT_SPEED;
+void updatePlayerVDown(Player *pPlayer) {
+    pPlayer->playerVelocityY = MOVEMENT_SPEED;
 }
 
-void updatePlayerVLeft(Player *player) {
-    player->playerVelocityX = -MOVEMENT_SPEED;
+void updatePlayerVLeft(Player *pPlayer) {
+    pPlayer->playerVelocityX = -MOVEMENT_SPEED;
 }
 
-void updatePlayerVRight(Player *player) {
-    player->playerVelocityX = MOVEMENT_SPEED;
+void updatePlayerVRight(Player *pPlayer) {
+    pPlayer->playerVelocityX = MOVEMENT_SPEED;
 }
 
-void resetPlayerSpeed(Player *player, int x, int y) {
-    if (x == 1) player->playerVelocityX = 0;
-    if (y == 1) player->playerVelocityY = 0;
+void resetPlayerSpeed(Player *pPlayer, int x, int y) {
+    if (x == 1) pPlayer->playerVelocityX = 0;
+    if (y == 1) pPlayer->playerVelocityY = 0;
 }
 
-int getPlayerSpeedY(Player *player) {
-    return player->playerVelocityY != 0;
+int getPlayerSpeedY(Player *pPlayer) {
+    return pPlayer->playerVelocityY != 0;
 }
 
-int getPlayerSpeedX(Player *player) {
-    return player->playerVelocityX != 0;
+int getPlayerSpeedX(Player *pPlayer) {
+    return pPlayer->playerVelocityX != 0;
 }
 
 void updatePlayerPosition(Player *pPlayer, float deltaTime) {
@@ -93,9 +93,9 @@ void updatePlayerPosition(Player *pPlayer, float deltaTime) {
     setPlayerPosition(pPlayer, newX, newY);
 }
 
-void setPlayerPosition(Player *player, int x, int y) {
-    player->playerRect.x = x;
-    player->playerRect.y = y;
+void setPlayerPosition(Player *pPlayer, int x, int y) {
+    pPlayer->playerRect.x = x;
+    pPlayer->playerRect.y = y;
 }
 
 void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {

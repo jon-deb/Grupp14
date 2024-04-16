@@ -4,18 +4,18 @@
 typedef struct player Player;
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h);
-void setPlayerPosition(Player *player, int x, int y);
-void updatePlayerVelocity(Player *player, float vx, float vy);
-SDL_Texture *getPlayerTexture(Player *player);
-SDL_Rect getPlayerRect(Player *player);
-void updatePlayerVUp(Player *player);
-void updatePlayerVDown(Player *player);
-void updatePlayerVLeft(Player *player);
-void updatePlayerVRight(Player *player);
+void setPlayerPosition(Player *pPlayer, int x, int y);
+void updatePlayerVelocity(Player *pPlayer, float vx, float vy);
+SDL_Texture *getPlayerTexture(Player *pPlayer);
+SDL_Rect getPlayerRect(Player *pPlayer);
+void updatePlayerVUp(Player *pPlayer);
+void updatePlayerVDown(Player *pPlayer);
+void updatePlayerVLeft(Player *pPlayer);
+void updatePlayerVRight(Player *pPlayer);
 void updatePlayerPosition(Player *pPlayer, float deltaTime);
-void resetPlayerSpeed(Player *player, int x, int y);
-int getPlayerSpeedY(Player *player);
-int getPlayerSpeedX(Player *player);
+void resetPlayerSpeed(Player *pPlayer, int x, int y);
+int getPlayerSpeedY(Player *pPlayer);
+int getPlayerSpeedX(Player *pPlayer);
 void restrictPlayerWithinWindow(Player *pPlayer, int w, int h);
 
 #endif
