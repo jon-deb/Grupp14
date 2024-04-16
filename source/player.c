@@ -1,12 +1,18 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
-#include "../include/player.h"  // Make sure this is the correct path to your player.h
+#include "../include/player.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifndef MOVEMENT_SPEED
-#define MOVEMENT_SPEED 400  // Example speed, adjust as necessary
-#endif
+#define MOVEMENT_SPEED 400
+
+struct player {
+    float playerVelocityX;
+    float playerVelocityY;
+    int xPos, yPos;
+    SDL_Texture *playerTexture;
+    SDL_Rect playerRect;
+};
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h) {
     Player *pPlayer = malloc(sizeof(Player));
@@ -38,10 +44,6 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h) {
     return pPlayer;
 }
 
-void setPlayerPosition(Player *player, int x, int y) {
-    player->playerRect.x = x;
-    player->playerRect.y = y;
-}
 
 void updatePlayerVelocity(Player *player, float vx, float vy) {
     player->playerVelocityX = vx;
@@ -83,4 +85,30 @@ int getPlayerSpeedY(Player *player) {
 
 int getPlayerSpeedX(Player *player) {
     return player->playerVelocityX != 0;
+}
+
+void updatePlayerPosition(Player *pPlayer, float deltaTime) {
+    int newX = pPlayer->playerRect.x + pPlayer->playerVelocityX * deltaTime;
+    int newY = pPlayer->playerRect.y + pPlayer->playerVelocityY * deltaTime;
+    setPlayerPosition(pPlayer, newX, newY);
+}
+
+void setPlayerPosition(Player *player, int x, int y) {
+    player->playerRect.x = x;
+    player->playerRect.y = y;
+}
+
+void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {
+    if (pPlayer->playerRect.x < 0) { 
+        setPlayerPosition(pPlayer, 0, pPlayer->playerRect.y); 
+    }
+    else if (pPlayer->playerRect.x + pPlayer->playerRect.w > width) {
+        setPlayerPosition(pPlayer, width - pPlayer->playerRect.w, pPlayer->playerRect.y);
+    }
+    if (pPlayer->playerRect.y < 0) {
+        setPlayerPosition(pPlayer, pPlayer->playerRect.x, 0);
+    }
+    else if (pPlayer->playerRect.y + pPlayer->playerRect.h > height) {
+        setPlayerPosition(pPlayer, pPlayer->playerRect.x, height - pPlayer->playerRect.h);
+    }
 }
