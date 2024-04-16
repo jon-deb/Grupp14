@@ -5,7 +5,10 @@
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
 #define FRICTION_COEFFICIENT 0.95f
-/*
+#define GOAL_TOP 352
+#define GOAL_BOTTOM 448
+
+
 typedef struct ball {
     SDL_Texture *texture;
     SDL_Rect rect;
@@ -15,7 +18,7 @@ typedef struct ball {
     bool collided;
 } Ball;
 
-*/
+
 
 Ball *createBall(SDL_Renderer *renderer) {
     Ball *ball = malloc(sizeof(Ball));
@@ -93,5 +96,38 @@ void applyFriction(Ball *pBall) {
 
     // ny hastighet
     setBallVelocity(pBall, vx, vy);
+}
+
+
+void restrictBallWithinWindow(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    if (ballRect.x < 0) {
+        setBallX(pBall, 0);
+        pBall->velocityX = -pBall->velocityX;
+    } else if (ballRect.x + ballRect.w > WINDOW_WIDTH) {
+        setBallX(pBall, WINDOW_WIDTH - ballRect.w);
+        pBall->velocityX = -pBall->velocityX;
+    }
+    if (ballRect.y < 0) {
+        setBallY(pBall, 0);
+        pBall->velocityY = -pBall->velocityY;
+    } else if (ballRect.y + ballRect.h > WINDOW_HEIGHT) {
+        setBallY(pBall, WINDOW_HEIGHT - ballRect.h);
+        pBall->velocityY = -pBall->velocityY;
+    }
+}
+
+
+
+bool goal(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, WINDOW_HEIGHT / 2 - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return true;
+    }
+    return false;
 }
 
