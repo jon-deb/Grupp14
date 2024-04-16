@@ -11,7 +11,7 @@
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
 #define BALL_SPEED_AFTER_COLLISION 500
-#define BORDER_SIZE 20 // Adjust this value as needed
+#define BORDER_SIZE 20
 #define GOAL_TOP 352
 #define GOAL_BOTTOM 448
 
@@ -28,9 +28,7 @@ void run(Game *pGame);
 void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
 bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
-void restrictPlayerWithinWindow(Player *pPlayer);
 void restrictBallWithinWindow(Ball *pBall);
-void updatePlayerPosition(Player *pPlayer, float deltaTime);
 void renderGame(Game *pGame);
 void handleCollisionsAndPhysics(Game *pGame);
 bool goal(Ball *pBall);
@@ -93,26 +91,18 @@ void run(Game *pGame) {
 
     while (!close_requested) {
         currentTick = SDL_GetTicks();
-        deltaTime = (currentTick - lastTick) / 1000.0f; // Calculate delta time in seconds
+        deltaTime = (currentTick - lastTick) / 1000.0f;
         lastTick = currentTick;
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) close_requested = 1;
             else handleInput(pGame, &event);
         }
+        restrictPlayerWithinWindow(pGame->pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
         updatePlayerPosition(pGame->pPlayer, deltaTime);
-        restrictPlayerWithinWindow(pGame->pPlayer);
         renderGame(pGame);
     }
 }
-
-void updatePlayerPosition(Player *pPlayer, float deltaTime) {
-    SDL_Rect playerRect = getPlayerRect(pPlayer);
-    int newX = playerRect.x + pPlayer->playerVelocityX * deltaTime;
-    int newY = playerRect.y + pPlayer->playerVelocityY * deltaTime;
-    setPlayerPosition(pPlayer, newX, newY);
-}
-
 
 void renderGame(Game *pGame) {
     SDL_Rect playerRect = getPlayerRect(pGame->pPlayer);
@@ -125,7 +115,7 @@ void renderGame(Game *pGame) {
     SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
     SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
     SDL_RenderPresent(pGame->pRenderer);
-    SDL_Delay(1000/60); // Approximately 60 FPS
+    SDL_Delay(1000/60); 
     handleCollisionsAndPhysics(pGame);
 }
 
@@ -153,7 +143,7 @@ void handleCollisionsAndPhysics(Game *pGame) {
             // update på hastigheten efter collision
             setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
-    applyFriction(pGame->pBall); // Slow down the ball
+    applyFriction(pGame->pBall);
     updateBallPosition(pGame->pBall);
     if (!goal(pGame->pBall))
         {
@@ -184,7 +174,6 @@ void handleInput(Game *pGame, SDL_Event *event) {
             }
             break;
         case SDL_KEYUP:
-            // Key release handling to stop movement
             switch (event->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
                 case SDL_SCANCODE_UP:
@@ -201,7 +190,7 @@ void handleInput(Game *pGame, SDL_Event *event) {
             }
             break;
     }
-    restrictPlayerWithinWindow(pGame->pPlayer);
+    restrictPlayerWithinWindow(pGame->pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 void closeGame(Game *pGame) {
@@ -216,21 +205,7 @@ bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
     if (rect1.y >= rect2.y + rect2.h) return false; // Top is below bottom
     if (rect1.x + rect1.w <= rect2.x) return false; // Right is left of left
     if (rect1.x >= rect2.x + rect2.w) return false; // Left is right of right
-    return true; // Collided
-}
-
-void restrictPlayerWithinWindow(Player *pPlayer) {
-    SDL_Rect playerRect = getPlayerRect(pPlayer);
-    if (playerRect.x < 0) {
-        setPlayerPosition(pPlayer, 0, playerRect.y);
-    } else if (playerRect.x + playerRect.w > WINDOW_WIDTH) {
-        setPlayerPosition(pPlayer, WINDOW_WIDTH - playerRect.w, playerRect.y);
-    }
-    if (playerRect.y < 0) {
-        setPlayerPosition(pPlayer, playerRect.x, 0);
-    } else if (playerRect.y + playerRect.h > WINDOW_HEIGHT) {
-        setPlayerPosition(pPlayer, playerRect.x, WINDOW_HEIGHT - playerRect.h);
-    }
+    return true;
 }
 
 void restrictBallWithinWindow(Ball *pBall) {
