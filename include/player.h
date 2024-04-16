@@ -1,15 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <SDL2/SDL.h>
-
-// Define the Player struct in the header so it is visible to other files.
-typedef struct player {
-    float playerVelocityX;
-    float playerVelocityY;
-    SDL_Texture *playerTexture;
-    SDL_Rect playerRect;
-} Player;
+typedef struct player Player;
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h);
 void setPlayerPosition(Player *player, int x, int y);
@@ -20,8 +12,10 @@ void updatePlayerVUp(Player *player);
 void updatePlayerVDown(Player *player);
 void updatePlayerVLeft(Player *player);
 void updatePlayerVRight(Player *player);
+void updatePlayerPosition(Player *pPlayer, float deltaTime);
 void resetPlayerSpeed(Player *player, int x, int y);
 int getPlayerSpeedY(Player *player);
 int getPlayerSpeedX(Player *player);
+void restrictPlayerWithinWindow(Player *pPlayer, int w, int h);
 
 #endif
