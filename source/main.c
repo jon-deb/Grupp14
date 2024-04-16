@@ -28,10 +28,10 @@ void run(Game *pGame);
 void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
 bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
-void restrictBallWithinWindow(Ball *pBall);
+
 void renderGame(Game *pGame);
 void handleCollisionsAndPhysics(Game *pGame);
-bool goal(Ball *pBall);
+
 
 int main(int argc, char** argv) {
     Game g = {0};
@@ -208,32 +208,5 @@ bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
     return true;
 }
 
-void restrictBallWithinWindow(Ball *pBall) {
-    SDL_Rect ballRect = getBallRect(pBall);
-    if (ballRect.x < 0) {
-        setBallX(pBall, 0);
-        pBall->velocityX = -pBall->velocityX;
-    } else if (ballRect.x + ballRect.w > WINDOW_WIDTH) {
-        setBallX(pBall, WINDOW_WIDTH - ballRect.w);
-        pBall->velocityX = -pBall->velocityX;
-    }
-    if (ballRect.y < 0) {
-        setBallY(pBall, 0);
-        pBall->velocityY = -pBall->velocityY;
-    } else if (ballRect.y + ballRect.h > WINDOW_HEIGHT) {
-        setBallY(pBall, WINDOW_HEIGHT - ballRect.h);
-        pBall->velocityY = -pBall->velocityY;
-    }
-}
 
-bool goal(Ball *pBall) {
-    SDL_Rect ballRect = getBallRect(pBall);
-    if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
-        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
-        setBallY(pBall, WINDOW_HEIGHT / 2 - ballRect.h / 2);
-        pBall->velocityX = 0;
-        pBall->velocityY = 0;
-        return true;
-    }
-    return false;
-}
+
