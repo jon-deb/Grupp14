@@ -3,11 +3,14 @@
 
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
+#define BALL_WINDOW_X1 62
+#define BALL_WINDOW_X2 1338
+#define BALL_WINDOW_Y1 42
+#define BALL_WINDOW_Y2 758
 #define MOVEMENT_SPEED 400
 #define FRICTION_COEFFICIENT 0.95f
-#define GOAL_TOP 352
-#define GOAL_BOTTOM 448
-
+#define GOAL_TOP 300
+#define GOAL_BOTTOM 500
 
 typedef struct ball {
     SDL_Texture *texture;
@@ -101,18 +104,32 @@ void applyFriction(Ball *pBall) {
 
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
-    if (ballRect.x < 0) {
-        setBallX(pBall, 0);
+    if (ballRect.x < BALL_WINDOW_X1) {
+        if (ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM)
+        {
+            setBallX(pBall, 0);
+        }
+        else
+        {
+            setBallX(pBall, BALL_WINDOW_X1);
+        }
         pBall->velocityX = -pBall->velocityX;
-    } else if (ballRect.x + ballRect.w > WINDOW_WIDTH) {
-        setBallX(pBall, WINDOW_WIDTH - ballRect.w);
+    } if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
+        if (ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM)
+        {
+            setBallX(pBall, WINDOW_WIDTH);
+        }
+        else
+        {
+            setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
+        }
         pBall->velocityX = -pBall->velocityX;
     }
-    if (ballRect.y < 0) {
-        setBallY(pBall, 0);
+    if (ballRect.y < BALL_WINDOW_Y1) {
+        setBallY(pBall, BALL_WINDOW_Y1);
         pBall->velocityY = -pBall->velocityY;
-    } else if (ballRect.y + ballRect.h > WINDOW_HEIGHT) {
-        setBallY(pBall, WINDOW_HEIGHT - ballRect.h);
+    } else if (ballRect.y + ballRect.h > BALL_WINDOW_Y2) {
+        setBallY(pBall, BALL_WINDOW_Y2 - ballRect.h);
         pBall->velocityY = -pBall->velocityY;
     }
 }
