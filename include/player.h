@@ -5,6 +5,7 @@ typedef struct player Player;
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h);
 void setPlayerPosition(Player *pPlayer, int x, int y);
+void destroyPlayer(Player *pPlayer);
 void updatePlayerVelocity(Player *pPlayer, float vx, float vy);
 SDL_Texture *getPlayerTexture(Player *pPlayer);
 SDL_Rect getPlayerRect(Player *pPlayer);

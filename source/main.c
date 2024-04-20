@@ -14,13 +14,15 @@
 #define BORDER_SIZE 20
 #define GOAL_TOP 352
 #define GOAL_BOTTOM 448
+#define PLAYER_MAX 6
 
 typedef struct game {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Ball *pBall;
     SDL_Texture *backgroundTexture;
-    Player *pPlayer;
+    Player *pPlayer[PLAYER_MAX];
+    int nrOfPlayers;
 } Game;
 
 int initiate(Game *pGame);
@@ -72,7 +74,16 @@ int initiate(Game *pGame) {
         return 0;    
     }
 
-    pGame->pPlayer = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    pGame->nrOfPlayers = 2;
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+        if (!pGame->pPlayer[i]) {
+            fprintf(stderr, "Failed to initialize player %d\n", i + 1);
+
+            return 0;
+        }
+    }
+
     pGame->pBall = createBall(pGame->pRenderer);
     if (!pGame->pBall) {
         printf("Error initializing the ball.\n");
@@ -98,31 +109,43 @@ void run(Game *pGame) {
             if (event.type == SDL_QUIT) close_requested = 1;
             else handleInput(pGame, &event);
         }
-        restrictPlayerWithinWindow(pGame->pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
-        updatePlayerPosition(pGame->pPlayer, deltaTime);
+        for (int i = 0; i < pGame->nrOfPlayers; i++)
+        {
+            updatePlayerPosition(pGame->pPlayer[i], deltaTime);
+            restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
+            //updatePlayerPosition(pGame->pPlayer, deltaTime);
+        }
         renderGame(pGame);
     }
 }
 
 void renderGame(Game *pGame) {
-    SDL_Rect playerRect = getPlayerRect(pGame->pPlayer);
-    SDL_Texture *playerTexture = getPlayerTexture(pGame->pPlayer);
-    SDL_Rect ballRect = getBallRect(pGame->pBall);
-    SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
-
     SDL_RenderClear(pGame->pRenderer);
     SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
-    SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
+
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        Player *player = pGame->pPlayer[i];
+        SDL_Rect playerRect = getPlayerRect(player);
+        SDL_Texture *playerTexture = getPlayerTexture(player);
+        SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
+    }
+
+    SDL_Rect ballRect = getBallRect(pGame->pBall);
+    SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
     SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
+
     SDL_RenderPresent(pGame->pRenderer);
     SDL_Delay(1000/60); 
     handleCollisionsAndPhysics(pGame);
 }
 
 void handleCollisionsAndPhysics(Game *pGame) {
-    SDL_Rect playerRect = getPlayerRect(pGame->pPlayer);
-    SDL_Rect ballRect = getBallRect(pGame->pBall);
-     if(checkCollision(playerRect, ballRect)) {
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        Player *currentPlayer = pGame->pPlayer[i];
+        SDL_Rect playerRect = getPlayerRect(currentPlayer);
+        SDL_Rect ballRect = getBallRect(pGame->pBall);
+    
+        if(checkCollision(playerRect, ballRect)) {
             // räknar mittpunkten för spelare och bollen
             float playerCenterX = playerRect.x + playerRect.w / 2;
             float playerCenterY = playerRect.y + playerRect.h / 2;
@@ -143,6 +166,7 @@ void handleCollisionsAndPhysics(Game *pGame) {
             // update på hastigheten efter collision
             setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
+    }
     applyFriction(pGame->pBall);
     updateBallPosition(pGame->pBall);
     if (!goal(pGame->pBall))
@@ -152,48 +176,62 @@ void handleCollisionsAndPhysics(Game *pGame) {
 }
 
 void handleInput(Game *pGame, SDL_Event *event) {
-    switch (event->type) {
-        case SDL_KEYDOWN:
-            switch (event->key.keysym.scancode) {
-                case SDL_SCANCODE_W:
-                case SDL_SCANCODE_UP:
-                    updatePlayerVUp(pGame->pPlayer);
-                    break;
-                case SDL_SCANCODE_S:
-                case SDL_SCANCODE_DOWN:
-                    updatePlayerVDown(pGame->pPlayer);
-                    break;
-                case SDL_SCANCODE_A:
-                case SDL_SCANCODE_LEFT:
-                    updatePlayerVLeft(pGame->pPlayer);
-                    break;
-                case SDL_SCANCODE_D:
-                case SDL_SCANCODE_RIGHT:
-                    updatePlayerVRight(pGame->pPlayer);
-                    break;
-            }
-            break;
-        case SDL_KEYUP:
-            switch (event->key.keysym.scancode) {
-                case SDL_SCANCODE_W:
-                case SDL_SCANCODE_UP:
-                case SDL_SCANCODE_S:
-                case SDL_SCANCODE_DOWN:
-                    resetPlayerSpeed(pGame->pPlayer, 0, 1);
-                    break;
-                case SDL_SCANCODE_A:
-                case SDL_SCANCODE_LEFT:
-                case SDL_SCANCODE_D:
-                case SDL_SCANCODE_RIGHT:
-                    resetPlayerSpeed(pGame->pPlayer, 1, 0);
-                    break;
-            }
-            break;
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        Player *player = pGame->pPlayer[i];
+        switch (event->type) {
+            case SDL_KEYDOWN:
+                if (i == 0) {
+                    switch (event->key.keysym.scancode) {
+                        case SDL_SCANCODE_W: updatePlayerVUp(player); break;
+                        case SDL_SCANCODE_S: updatePlayerVDown(player); break;
+                        case SDL_SCANCODE_A: updatePlayerVLeft(player); break;
+                        case SDL_SCANCODE_D: updatePlayerVRight(player); break;
+                    }
+                } else if (i == 1) {
+                    switch (event->key.keysym.scancode) {
+                        case SDL_SCANCODE_UP: updatePlayerVUp(player); break;
+                        case SDL_SCANCODE_DOWN: updatePlayerVDown(player); break;
+                        case SDL_SCANCODE_LEFT: updatePlayerVLeft(player); break;
+                        case SDL_SCANCODE_RIGHT: updatePlayerVRight(player); break;
+                    }
+                }
+                break;
+            case SDL_KEYUP:
+                if (i == 0) {
+                    switch (event->key.keysym.scancode) {
+                        case SDL_SCANCODE_W:
+                        case SDL_SCANCODE_S:
+                            resetPlayerSpeed(pGame->pPlayer[i], 0, 1);
+                            break;
+                        case SDL_SCANCODE_A:
+                        case SDL_SCANCODE_D:
+                            resetPlayerSpeed(pGame->pPlayer[i], 1, 0);
+                            break;
+                    }   
+                } else if (i == 1) {
+                    switch (event->key.keysym.scancode) {
+                        case SDL_SCANCODE_UP:
+                        case SDL_SCANCODE_DOWN:
+                            resetPlayerSpeed(pGame->pPlayer[i], 0, 1);
+                            break;
+                        case SDL_SCANCODE_LEFT:
+                        case SDL_SCANCODE_RIGHT:
+                            resetPlayerSpeed(pGame->pPlayer[i], 1, 0);
+                            break;
+                    }
+                }
+                break;
+        }
+        restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
     }
-    restrictPlayerWithinWindow(pGame->pPlayer, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 void closeGame(Game *pGame) {
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        if (pGame->pPlayer[i]) {
+            destroyPlayer(pGame->pPlayer[i]);
+        }
+    }
     if (pGame->pBall) destroyBall(pGame->pBall);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);

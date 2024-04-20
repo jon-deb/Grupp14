@@ -44,6 +44,15 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h) {
     return pPlayer;
 }
 
+void destroyPlayer(Player *pPlayer) {
+    if (pPlayer != NULL) {
+        if (pPlayer->playerTexture != NULL) {
+            SDL_DestroyTexture(pPlayer->playerTexture);
+            pPlayer->playerTexture = NULL;
+        }
+        free(pPlayer);
+    }
+}
 
 void updatePlayerVelocity(Player *pPlayer, float vx, float vy) {
     pPlayer->playerVelocityX = vx;
