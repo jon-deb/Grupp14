@@ -76,7 +76,7 @@ int initiate(Game *pGame) {
 
     pGame->nrOfPlayers = 2;
     for (int i = 0; i < pGame->nrOfPlayers; i++) {
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
             fprintf(stderr, "Failed to initialize player %d\n", i + 1);
 

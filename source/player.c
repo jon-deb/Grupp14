@@ -14,7 +14,7 @@ struct player {
     SDL_Rect playerRect;
 };
 
-Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h) {
+Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex) {
     Player *pPlayer = malloc(sizeof(Player));
     if (!pPlayer) {
         fprintf(stderr, "Memory allocation failed for Player\n");
@@ -22,12 +22,19 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h) {
     }
     pPlayer->playerRect.w = 64;
     pPlayer->playerRect.h = 64;
-    pPlayer->playerRect.x = (w - pPlayer->playerRect.w) / 2;
+    int halfWidth = w / 2;
+    if (playerIndex == 0) {
+        pPlayer->playerRect.x = halfWidth / 2 - pPlayer->playerRect.w / 2; //mitten av första planhalva
+    } else {
+        pPlayer->playerRect.x = halfWidth + (halfWidth / 2 - pPlayer->playerRect.w / 2); //mitten av andra planhalva
+    }
     pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
 
-    SDL_Surface *playerSurface = IMG_Load("resources/player.png");
+    char imagePath[22];
+    snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
+    SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
         fprintf(stderr, "Failed to load player image: %s\n", IMG_GetError());
         free(pPlayer);

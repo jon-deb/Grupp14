@@ -47,8 +47,8 @@ Ball *createBall(SDL_Renderer *renderer) {
 
     ball->rect.w = 32;
     ball->rect.h = 32;
-    ball->rect.x = WINDOW_HEIGHT / 4;
-    ball->rect.y = WINDOW_HEIGHT / 4; 
+    ball->rect.x = WINDOW_WIDTH / 2 - ball->rect.w / 2;
+    ball->rect.y = WINDOW_HEIGHT / 2 - ball->rect.h / 2; 
     ball->velocityX = 0;
     ball->velocityY = 0;
     ball->collided = false;

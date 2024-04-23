@@ -3,7 +3,7 @@
 
 typedef struct player Player;
 
-Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h);
+Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex);
 void setPlayerPosition(Player *pPlayer, int x, int y);
 void destroyPlayer(Player *pPlayer);
 void updatePlayerVelocity(Player *pPlayer, float vx, float vy);
