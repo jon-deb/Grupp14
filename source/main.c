@@ -170,9 +170,16 @@ void handleCollisionsAndPhysics(Game *pGame) {
     applyFriction(pGame->pBall);
     updateBallPosition(pGame->pBall);
     if (!goal(pGame->pBall))
+    {
+        restrictBallWithinWindow(pGame->pBall);
+    }
+    else
+    {
+        for (int i = 0; i < pGame->nrOfPlayers; i++)
         {
-            restrictBallWithinWindow(pGame->pBall);
+            resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
         }
+    }
 }
 
 void handleInput(Game *pGame, SDL_Event *event) {

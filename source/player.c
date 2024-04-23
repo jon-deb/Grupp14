@@ -22,15 +22,7 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     }
     pPlayer->playerRect.w = 64;
     pPlayer->playerRect.h = 64;
-    int halfWidth = w / 2;
-    if (playerIndex == 0) {
-        pPlayer->playerRect.x = halfWidth / 2 - pPlayer->playerRect.w / 2; //mitten av första planhalva
-    } else {
-        pPlayer->playerRect.x = halfWidth + (halfWidth / 2 - pPlayer->playerRect.w / 2); //mitten av andra planhalva
-    }
-    pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
-    pPlayer->playerVelocityX = 0;
-    pPlayer->playerVelocityY = 0;
+    resetPlayerPos(pPlayer, playerIndex, w, h);
 
     char imagePath[22];
     snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
@@ -127,4 +119,17 @@ void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {
     else if (pPlayer->playerRect.y + pPlayer->playerRect.h > height) {
         setPlayerPosition(pPlayer, pPlayer->playerRect.x, height - pPlayer->playerRect.h);
     }
+}
+
+void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
+{
+    int halfWidth = w / 2;
+    if (playerIndex == 0) {
+        pPlayer->playerRect.x = halfWidth / 2 - pPlayer->playerRect.w / 2; //mitten av första planhalva
+    } else {
+        pPlayer->playerRect.x = halfWidth + (halfWidth / 2 - pPlayer->playerRect.w / 2); //mitten av andra planhalva
+    }
+    pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
+    pPlayer->playerVelocityX = 0;
+    pPlayer->playerVelocityY = 0;
 }
