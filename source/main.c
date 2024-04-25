@@ -183,54 +183,45 @@ void handleCollisionsAndPhysics(Game *pGame) {
 }
 
 void handleInput(Game *pGame, SDL_Event *event) {
-    for (int i = 0; i < pGame->nrOfPlayers; i++) {
-        Player *player = pGame->pPlayer[i];
-        switch (event->type) {
-            case SDL_KEYDOWN:
-                if (i == 0) {
-                    switch (event->key.keysym.scancode) {
-                        case SDL_SCANCODE_W: updatePlayerVUp(player); break;
-                        case SDL_SCANCODE_S: updatePlayerVDown(player); break;
-                        case SDL_SCANCODE_A: updatePlayerVLeft(player); break;
-                        case SDL_SCANCODE_D: updatePlayerVRight(player); break;
-                    }
-                } else if (i == 1) {
-                    switch (event->key.keysym.scancode) {
-                        case SDL_SCANCODE_UP: updatePlayerVUp(player); break;
-                        case SDL_SCANCODE_DOWN: updatePlayerVDown(player); break;
-                        case SDL_SCANCODE_LEFT: updatePlayerVLeft(player); break;
-                        case SDL_SCANCODE_RIGHT: updatePlayerVRight(player); break;
-                    }
-                }
-                break;
-            case SDL_KEYUP:
-                if (i == 0) {
-                    switch (event->key.keysym.scancode) {
-                        case SDL_SCANCODE_W:
-                        case SDL_SCANCODE_S:
-                            resetPlayerSpeed(pGame->pPlayer[i], 0, 1);
-                            break;
-                        case SDL_SCANCODE_A:
-                        case SDL_SCANCODE_D:
-                            resetPlayerSpeed(pGame->pPlayer[i], 1, 0);
-                            break;
-                    }   
-                } else if (i == 1) {
-                    switch (event->key.keysym.scancode) {
-                        case SDL_SCANCODE_UP:
-                        case SDL_SCANCODE_DOWN:
-                            resetPlayerSpeed(pGame->pPlayer[i], 0, 1);
-                            break;
-                        case SDL_SCANCODE_LEFT:
-                        case SDL_SCANCODE_RIGHT:
-                            resetPlayerSpeed(pGame->pPlayer[i], 1, 0);
-                            break;
-                    }
-                }
-                break;
-        }
-        restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
+    switch (event->type) {
+        case SDL_KEYDOWN:
+            switch (event->key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                case SDL_SCANCODE_UP:
+                    updatePlayerVUp(pGame->pPlayer[0]);
+                    break;
+                case SDL_SCANCODE_S:
+                case SDL_SCANCODE_DOWN:
+                    updatePlayerVDown(pGame->pPlayer[0]);
+                    break;
+                case SDL_SCANCODE_A:
+                case SDL_SCANCODE_LEFT:
+                    updatePlayerVLeft(pGame->pPlayer[0]);
+                    break;
+                case SDL_SCANCODE_D:
+                case SDL_SCANCODE_RIGHT:
+                    updatePlayerVRight(pGame->pPlayer[0]);
+                    break;
+            }
+            break;
+        case SDL_KEYUP:
+            switch (event->key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                case SDL_SCANCODE_UP:
+                case SDL_SCANCODE_S:
+                case SDL_SCANCODE_DOWN:
+                    resetPlayerSpeed(pGame->pPlayer[0], 0, 1);
+                    break;
+                case SDL_SCANCODE_A:
+                case SDL_SCANCODE_LEFT:
+                case SDL_SCANCODE_D:
+                case SDL_SCANCODE_RIGHT:
+                    resetPlayerSpeed(pGame->pPlayer[0], 1, 0);
+                    break;
+            }
+            break;
     }
+    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 void closeGame(Game *pGame) {
