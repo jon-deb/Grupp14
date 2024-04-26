@@ -6,7 +6,7 @@
 #include <SDL2/SDL_image.h>
 #include "../include/ball.h"
 #include "../include/player.h"
-
+#include "../include/state.h"
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
@@ -19,10 +19,14 @@
 typedef struct game {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Ball *pBall;
+    SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
+    //TTF_Font *pFont, *pScoreFont; //*pTimerFont för annan storlek på timern
+    //Text *pGameModeText, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
     Player *pPlayer[PLAYER_MAX];
+    Ball *pBall;
     int nrOfPlayers;
+    GameState state;
 } Game;
 
 int initiate(Game *pGame);
@@ -60,14 +64,14 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
-    SDL_Surface *backgroundSurface = IMG_Load("resources/newfield.png");
-    if (!backgroundSurface) {
+    pGame->pBackgroundSurface = IMG_Load("resources/newfield.png");
+    if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
         return 0;    
     }
-    pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, backgroundSurface);
-    SDL_FreeSurface(backgroundSurface);
+    pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pGame->pBackgroundSurface);
+    SDL_FreeSurface(pGame->pBackgroundSurface);
     if (!pGame->backgroundTexture) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
@@ -90,6 +94,7 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;
     }
+    pGame->state = MENU;
     return 1;
 }
 
@@ -101,21 +106,39 @@ void run(Game *pGame) {
     float deltaTime;
 
     while (!close_requested) {
-        currentTick = SDL_GetTicks();
-        deltaTime = (currentTick - lastTick) / 1000.0f;
-        lastTick = currentTick;
-
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) close_requested = 1;
-            else handleInput(pGame, &event);
+        switch(pGame->state) {
+            case MENU: 
+                //drawText("press 1 to play multiplayer, q to exit)
+                if(SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT || event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
+                    else if(event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_1) {
+                        //användaren skriver in  ip adress
+                        //när alla skrivit in rätt ip adress och connectat ändras state till playing
+                        pGame->state=PLAYING;
+                    }
+                }
+                break;
+            case PLAYING:
+                currentTick = SDL_GetTicks();
+                deltaTime = (currentTick - lastTick) / 1000.0f;
+                lastTick = currentTick;
+                while (SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) close_requested = 1;
+                    else handleInput(pGame, &event);
+                }
+                for (int i = 0; i < pGame->nrOfPlayers; i++)
+                {
+                    updatePlayerPosition(pGame->pPlayer[i], deltaTime);
+                    restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
+                    //updatePlayerPosition(pGame->pPlayer, deltaTime);
+                }
+                renderGame(pGame);
+                break;
+            case GAMEOVER:
+                //drawtext team X won!
+                pGame->state = MENU;
+                break;
         }
-        for (int i = 0; i < pGame->nrOfPlayers; i++)
-        {
-            updatePlayerPosition(pGame->pPlayer[i], deltaTime);
-            restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
-            //updatePlayerPosition(pGame->pPlayer, deltaTime);
-        }
-        renderGame(pGame);
     }
 }
 
