@@ -126,7 +126,7 @@ int initiate(Game *pGame) {
         return 0;
 	}
 
-    //lägg till pGame->state = START;
+    pGame->state = MENU;
     pGame->nrOfClients = 0;
     return 1;
 }
@@ -140,22 +140,64 @@ void run(Game *pGame) {
     ClientData cData;
 
     while (!close_requested) {
-        currentTick = SDL_GetTicks();
-        deltaTime = (currentTick - lastTick) / 1000.0f;
-        lastTick = currentTick;
+        switch(pGame->state) {
+            case MENU: 
+                //drawText("press 1 to play multiplayer, q to exit)
+                SDL_RenderPresent(pGame->pRenderer);
+                
+                if(SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT || event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
+                    else if(event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_1) {
+                        //användaren skriver in  ip adress
+                        //när alla skrivit in rätt ip adress och connectat ändras state till playing
+                        pGame->state=PLAYING;
+                    }
+                }
+                
+                if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
+                add(pGame->pPacket->address,pGame->clients,&(pGame->nrOfClients));
+                if(pGame->nrOfClients==MAX_ROCKETS) setUpGame(pGame);
+                }
+                break;
+            case PLAYING:
+             sendGameData(pGame);
+                currentTick = SDL_GetTicks();
+                deltaTime = (currentTick - lastTick) / 1000.0f;
+                lastTick = currentTick;
+                
+                while(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
+                memcpy(&cData, pGame->pPacket->data, sizeof(ClientData));
+                executeCommand(pGame,cData);
+                }
+                while (SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) close_requested = 1;
+                    else handleInput(pGame, &event);
+                }
+                for (int i = 0; i < pGame->nrOfPlayers; i++)
+                {
+                    updatePlayerPosition(pGame->pPlayer[i], deltaTime);
+                    restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
+                    //updatePlayerPosition(pGame->pPlayer, deltaTime);
+                }
 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) close_requested = 1;
-            else handleInput(pGame, &event);
+                //om timern går ut case GAMEOVER:
+                // om ett visst antal mål görs case GAMEOVER:
+                renderGame(pGame);
+                break;
+            case GAMEOVER:
+                //drawtext team X won!
+                sendGameData(pGame);
+
+                pGame->state = MENU;
+                break;
         }
-        for (int i = 0; i < pGame->nrOfPlayers; i++)
-        {
-            updatePlayerPosition(pGame->pPlayer[i], deltaTime);
-            restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
-            //updatePlayerPosition(pGame->pPlayer, deltaTime);
-        }
-        renderGame(pGame);
     }
+}
+
+void setUpGame(Game *pGame){
+    for(int i=0;i<PLAYER_MAX;i++) setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+    pGame->nrOfPlayers=PLAYER_MAX;
+    pGame->state = PLAYING;
 }
 
 void renderGame(Game *pGame) {
