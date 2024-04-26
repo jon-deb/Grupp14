@@ -14,7 +14,7 @@
 #define BORDER_SIZE 20
 #define GOAL_TOP 352
 #define GOAL_BOTTOM 448
-#define PLAYER_MAX 6
+#define MAX_PLAYERS 6
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -23,9 +23,9 @@ typedef struct game {
     SDL_Texture *backgroundTexture;
     //TTF_Font *pFont, *pScoreFont; //*pTimerFont för annan storlek på timern
     //Text *pGameModeText, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
-    Player *pPlayer[PLAYER_MAX];
+    Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
-    int nrOfPlayers;
+    int nrOfPlayers, playerNr;
     GameState state;
 } Game;
 
@@ -33,11 +33,8 @@ int initiate(Game *pGame);
 void run(Game *pGame);
 void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
-
 void renderGame(Game *pGame);
 void handleCollisionsAndPhysics(Game *pGame);
-
 
 int main(int argc, char** argv) {
     Game g = {0};
@@ -64,7 +61,7 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
-    pGame->pBackgroundSurface = IMG_Load("resources/newfield.png");
+    pGame->pBackgroundSurface = IMG_Load("resources/field.png");
     if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
@@ -131,6 +128,11 @@ void run(Game *pGame) {
                     updatePlayerPosition(pGame->pPlayer[i], deltaTime);
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
                     //updatePlayerPosition(pGame->pPlayer, deltaTime);
+                }
+                for (int i=0; i<pGame->nrOfPlayers; i++) {
+                    for(int j=0; j<pGame->nrOfPlayers; j++) {
+                        handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
+                    }
                 }
                 renderGame(pGame);
                 break;
@@ -200,7 +202,7 @@ void handleCollisionsAndPhysics(Game *pGame) {
     {
         for (int i = 0; i < pGame->nrOfPlayers; i++)
         {
-            resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+            setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
         }
     }
 }
@@ -258,14 +260,3 @@ void closeGame(Game *pGame) {
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
     SDL_Quit();
 }
-
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
-    if (rect1.y + rect1.h <= rect2.y) return false; // Bottom is above top
-    if (rect1.y >= rect2.y + rect2.h) return false; // Top is below bottom
-    if (rect1.x + rect1.w <= rect2.x) return false; // Right is left of left
-    if (rect1.x >= rect2.x + rect2.w) return false; // Left is right of right
-    return true;
-}
-
-
-

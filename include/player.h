@@ -17,7 +17,11 @@ void updatePlayerPosition(Player *pPlayer, float deltaTime);
 void resetPlayerSpeed(Player *pPlayer, int x, int y);
 int getPlayerSpeedY(Player *pPlayer);
 int getPlayerSpeedX(Player *pPlayer);
+void updatePosAfterCollision(Player *pPlayer1, Player *pPlayer2);
+int checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 void restrictPlayerWithinWindow(Player *pPlayer, int w, int h);
 void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h);
+void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h);
+void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2);
 
 #endif

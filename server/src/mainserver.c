@@ -9,7 +9,7 @@
 #include "player_data.h"
 #include "../include/ball.h"
 #include "../include/player.h"
-
+#include "../include/player_data.h"
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
@@ -17,18 +17,19 @@
 #define BORDER_SIZE 20
 #define GOAL_TOP 352
 #define GOAL_BOTTOM 448
-#define PLAYER_MAX 6
+#define MAX_PLAYERS 6
 
 typedef struct game {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Ball *pBall;
     SDL_Texture *backgroundTexture;
-    Player *pPlayer[PLAYER_MAX];
+    SDL_Surface *pBackgroundSurface;
     int nrOfPlayers;
+    Player *pPlayer[MAX_PLAYERS];
+    Ball *pBall;
     UDPsocket pSocket;
 	UDPpacket *pPacket;
-    IPaddress clients[PLAYER_MAX];
+    IPaddress clients[MAX_PLAYERS];
     int nrOfClients;
     ServerData sData;
 } Game;
@@ -41,8 +42,7 @@ void add(IPaddress address, IPaddress clients[],int *pNrOfClients);
 void sendGameData(Game *pGame);
 void executeCommand(Game *pGame,ClientData cData);
 
-
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
+//bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 
 void renderGame(Game *pGame);
 void handleCollisionsAndPhysics(Game *pGame);
@@ -61,15 +61,13 @@ int initiate(Game *pGame) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
     }
-
-     if (SDLNet_Init())
-	{
+    if (SDLNet_Init()) {
 		fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
         TTF_Quit();
         SDL_Quit();
 		return 0;
 	}
-    
+
     pGame->pWindow = SDL_CreateWindow("Football Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
@@ -82,49 +80,46 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
-    SDL_Surface *backgroundSurface = IMG_Load("resources/newfield.png");
-    if (!backgroundSurface) {
+    pGame->pBackgroundSurface = IMG_Load("resources/field.png");
+    if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
         return 0;    
     }
-    pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, backgroundSurface);
-    SDL_FreeSurface(backgroundSurface);
+    pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pGame->pBackgroundSurface);
+    SDL_FreeSurface(pGame->pBackgroundSurface);
     if (!pGame->backgroundTexture) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
         return 0;    
     }
 
+    if (!(pGame->pSocket = SDLNet_UDP_Open(2000))) {
+		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+		close(pGame);
+        return 0;
+	}
+	if (!(pGame->pPacket = SDLNet_AllocPacket(512))) {
+		printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+		close(pGame);
+        return 0;
+	}
+
     pGame->nrOfPlayers = 2;
     for (int i = 0; i < pGame->nrOfPlayers; i++) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
             fprintf(stderr, "Failed to initialize player %d\n", i + 1);
-
+            close(pGame);
             return 0;
         }
     }
-
     pGame->pBall = createBall(pGame->pRenderer);
     if (!pGame->pBall) {
         printf("Error initializing the ball.\n");
         closeGame(pGame);
         return 0;
     }
-
-     if (!(pGame->pSocket = SDLNet_UDP_Open(2000)))
-	{
-		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-		close(pGame);
-        return 0;
-	}
-	if (!(pGame->pPacket = SDLNet_AllocPacket(512)))
-	{
-		printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-		close(pGame);
-        return 0;
-	}
 
     pGame->state = MENU;
     pGame->nrOfClients = 0;
@@ -148,40 +143,39 @@ void run(Game *pGame) {
                 if(SDL_PollEvent(&event)) {
                     if(event.type == SDL_QUIT || event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
                     else if(event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_1) {
-                        //användaren skriver in  ip adress
-                        //när alla skrivit in rätt ip adress och connectat ändras state till playing
-                        pGame->state=PLAYING;
+                        if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
+                            add(pGame->pPacket->address, pGame->clients, &(pGame->nrOfClients));
+                            if(pGame->nrOfClients==MAX_PLAYERS) setUpGame(pGame);
+                        }
                     }
-                }
-                
-                if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
-                add(pGame->pPacket->address,pGame->clients,&(pGame->nrOfClients));
-                if(pGame->nrOfClients==MAX_ROCKETS) setUpGame(pGame);
                 }
                 break;
             case PLAYING:
-             sendGameData(pGame);
+                sendGameData(pGame);
                 currentTick = SDL_GetTicks();
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
                 
-                while(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
-                memcpy(&cData, pGame->pPacket->data, sizeof(ClientData));
-                executeCommand(pGame,cData);
+                while(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1) {
+                    memcpy(&cData, pGame->pPacket->data, sizeof(ClientData));
+                    executeCommand(pGame,cData);
                 }
                 while (SDL_PollEvent(&event)) {
                     if(event.type == SDL_QUIT) close_requested = 1;
-                    else handleInput(pGame, &event);
+                    //else handleInput(pGame, &event);
                 }
-                for (int i = 0; i < pGame->nrOfPlayers; i++)
-                {
+                for (int i = 0; i < pGame->nrOfPlayers; i++) {
                     updatePlayerPosition(pGame->pPlayer[i], deltaTime);
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
-                    //updatePlayerPosition(pGame->pPlayer, deltaTime);
                 }
-
-                //om timern går ut case GAMEOVER:
-                // om ett visst antal mål görs case GAMEOVER:
+                //handleCollisionsAndPhysics(pGame);
+                for (int i=0; i<pGame->nrOfPlayers; i++) {
+                    for(int j=0; j<pGame->nrOfPlayers; j++) {
+                        handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
+                    }
+                }
+                //om timern går ut case = GAMEOVER:
+                // om ett visst antal mål görs case = GAMEOVER:
                 renderGame(pGame);
                 break;
             case GAMEOVER:
@@ -195,8 +189,8 @@ void run(Game *pGame) {
 }
 
 void setUpGame(Game *pGame){
-    for(int i=0;i<PLAYER_MAX;i++) setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-    pGame->nrOfPlayers=PLAYER_MAX;
+    for(int i=0;i<MAX_PLAYERS;i++) setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+    //pGame->nrOfPlayers=PLAYER_MAX;
     pGame->state = PLAYING;
 }
 
@@ -220,22 +214,36 @@ void renderGame(Game *pGame) {
     handleCollisionsAndPhysics(pGame);
 }
 
+/*void handlePlayerCollision(Game *pGame) {
+    for (int i=0; i<pGame->nrOfPlayers; i++) {
+        for(int j=0; j<pGame->nrOfPlayers; j++) {
+            Player *player1 = pGame->pPlayer[i];
+            Player *player2 = pGame->pPlayer[j];
+            SDL_Rect p1rect = getPlayerRect(pGame->pPlayer[i]);
+            SDL_Rect p2rect = getPlayerRect(pGame->pPlayer[j]);
+            if(checkCollision(p1rect, p2rect)) {
+                updatePosAfterCollision(pGame->pPlayer[i]);
+                updatePosAfterCollision(pGame->pPlayer[j]);
+            }
+        }
+    }
+}*/
+
 void handleCollisionsAndPhysics(Game *pGame) {
-    for (int i = 0; i < pGame->nrOfPlayers; i++) {
         Player *currentPlayer = pGame->pPlayer[i];
         SDL_Rect playerRect = getPlayerRect(currentPlayer);
         SDL_Rect ballRect = getBallRect(pGame->pBall);
     
         if(checkCollision(playerRect, ballRect)) {
             // räknar mittpunkten för spelare och bollen
-            float playerCenterX = playerRect.x + playerRect.w / 2;
-            float playerCenterY = playerRect.y + playerRect.h / 2;
-            float ballCenterX = ballRect.x + ballRect.w / 2;
-            float ballCenterY = ballRect.y + ballRect.h / 2;
+            float player1CenterX = playerRect.x + playerRect.w / 2;
+            float player1CenterY = playerRect.y + playerRect.h / 2;
+            float player2CenterX = ballRect.x + ballRect.w / 2;
+            float player2CenterY = ballRect.y + ballRect.h / 2;
 
             // beräknar vektorn
-            float collisionVectorX = ballCenterX - playerCenterX;
-            float collisionVectorY = ballCenterY - playerCenterY;
+            float collisionVectorX = player2CenterX - playerCenterX;
+            float collisionVectorY = player2CenterY - playerCenterY;
             
             // räknar distansen
             float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
@@ -247,15 +255,12 @@ void handleCollisionsAndPhysics(Game *pGame) {
             // update på hastigheten efter collision
             setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
         }
-    }
     applyFriction(pGame->pBall);
     updateBallPosition(pGame->pBall);
-    if (!goal(pGame->pBall))
-    {
+    if (!goal(pGame->pBall)) {
         restrictBallWithinWindow(pGame->pBall);
     }
-    else
-    {
+    else {
         for (int i = 0; i < pGame->nrOfPlayers; i++)
         {
             resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -337,10 +342,10 @@ void executeCommand(Game *pGame,ClientData cData){
 
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
-    for(int i=0;i<PLAYER_MAX;i++){
+    for(int i=0;i<MAX_PLAYERS;i++){
         getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.player[i]));
     }
-    for(int i=0;i<PLAYER_MAX;i++){
+    for(int i=0;i<MAX_PLAYERS;i++){
         pGame->sData.playerNr = i;
         memcpy(pGame->pPacket->data, &(pGame->sData), sizeof(ServerData));
 		pGame->pPacket->len = sizeof(ServerData);
@@ -372,13 +377,7 @@ void closeGame(Game *pGame) {
     SDL_Quit();
 }
 
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
-    if (rect1.y + rect1.h <= rect2.y) return false; // Bottom is above top
-    if (rect1.y >= rect2.y + rect2.h) return false; // Top is below bottom
-    if (rect1.x + rect1.w <= rect2.x) return false; // Right is left of left
-    if (rect1.x >= rect2.x + rect2.w) return false; // Left is right of right
-    return true;
-}
+
 
 
 

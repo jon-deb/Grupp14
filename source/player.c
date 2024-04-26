@@ -3,6 +3,7 @@
 #include "../include/player.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #define MOVEMENT_SPEED 400
 
@@ -22,7 +23,7 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     }
     pPlayer->playerRect.w = 64;
     pPlayer->playerRect.h = 64;
-    resetPlayerPos(pPlayer, playerIndex, w, h);
+    setStartingPosition(pPlayer, playerIndex, w, h);
 
     char imagePath[22];
     snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
@@ -106,6 +107,23 @@ void setPlayerPosition(Player *pPlayer, int x, int y) {
     pPlayer->playerRect.y = y;
 }
 
+void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2) {
+    SDL_Rect p1rect = getPlayerRect(pPlayer1);
+    SDL_Rect p2rect = getPlayerRect(pPlayer2);
+    if(checkCollision(p1rect, p2rect)) {
+        //resetPlayerSpeed(pPlayer1, 1, 1);
+        //resetPlayerSpeed(pPlayer2, 1, 1);
+    }
+}
+
+int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
+    if (rect1.y + rect1.h <= rect2.y) return 0; // Bottom is above top
+    if (rect1.y >= rect2.y + rect2.h) return 0; // Top is below bottom
+    if (rect1.x + rect1.w <= rect2.x) return 0; // Right is left of left
+    if (rect1.x >= rect2.x + rect2.w) return 0; // Left is right of right
+    return 1;
+}
+
 void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {
     if (pPlayer->playerRect.x < 0) { 
         setPlayerPosition(pPlayer, 0, pPlayer->playerRect.y); 
@@ -132,4 +150,31 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
     pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
+}
+
+void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h) {
+    pPlayer->playerVelocityX = 0;
+    pPlayer->playerVelocityY = 0;
+    /*spelare 0, 2 och 4 är i samma lag
+    spelare 1, 3, och 5 är i samma lag
+    lag beror på vilken ordning man joinar*/
+    if(playerIndex == 0 || playerIndex == 1) {
+        pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2;
+        if(playerIndex == 1) {
+            pPlayer->playerRect.x += w/2; 
+        }
+        pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
+    }
+    /*else if(playerIndex == 2 || playerIndex == 3) {
+        
+        if(playerIndex == 3) {
+            
+        }
+    }
+    else if(playerIndex == 4 || playerIndex == 5) {
+
+        if(playerIndex == 5) {
+
+        }
+    }*/
 }
