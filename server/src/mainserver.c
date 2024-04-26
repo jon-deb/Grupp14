@@ -61,6 +61,15 @@ int initiate(Game *pGame) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
     }
+
+     if (SDLNet_Init())
+	{
+		fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
+        TTF_Quit();
+        SDL_Quit();
+		return 0;
+	}
+    
     pGame->pWindow = SDL_CreateWindow("Football Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
@@ -103,6 +112,22 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;
     }
+
+     if (!(pGame->pSocket = SDLNet_UDP_Open(2000)))
+	{
+		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+		close(pGame);
+        return 0;
+	}
+	if (!(pGame->pPacket = SDLNet_AllocPacket(512)))
+	{
+		printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+		close(pGame);
+        return 0;
+	}
+
+    //lägg till pGame->state = START;
+    pGame->nrOfClients = 0;
     return 1;
 }
 
