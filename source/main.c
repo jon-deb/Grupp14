@@ -3,10 +3,12 @@
 #include <stdbool.h>
 #include <math.h>
 #include <SDL2/SDL.h>
+#include <SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 #include "../include/ball.h"
 #include "../include/player.h"
 #include "../include/state.h"
+#include "../include/text.h"
 #define WINDOW_WIDTH 1400
 #define WINDOW_HEIGHT 800
 #define MOVEMENT_SPEED 400
@@ -21,8 +23,8 @@ typedef struct game {
     SDL_Renderer *pRenderer;
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
-    //TTF_Font *pFont, *pScoreFont; //*pTimerFont för annan storlek på timern
-    //Text *pGameModeText, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
+    TTF_Font *pFont; //, *pScoreFont; //*pTimerFont för annan storlek på timern
+    Text *pTestText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
     Player *pPlayer[PLAYER_MAX];
     Ball *pBall;
     int nrOfPlayers;
@@ -52,6 +54,11 @@ int initiate(Game *pGame) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
     }
+    if(TTF_Init()!=0){
+        printf("Error: %s\n",TTF_GetError());
+        SDL_Quit();
+        return 0;
+    }
     pGame->pWindow = SDL_CreateWindow("Football Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
@@ -64,6 +71,14 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
+
+    pGame->pFont = TTF_OpenFont("/resources/ManaspaceRegular-ZJwZ.ttf", 100);
+    if(!pGame->pFont){
+        printf("Error: %s\n",TTF_GetError());
+        closeGame(pGame);
+        return 0;
+    }
+
     pGame->pBackgroundSurface = IMG_Load("resources/newfield.png");
     if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
@@ -94,6 +109,14 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;
     }
+
+    pGame->pTestText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"press 1 to play multiplayer, q to exit",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    if(!pGame->pTestText){
+        printf("Error: %s\n",SDL_GetError());
+        close(pGame);
+        return 0;
+    }
+
     pGame->state = MENU;
     return 1;
 }
@@ -109,6 +132,7 @@ void run(Game *pGame) {
         switch(pGame->state) {
             case MENU: 
                 //drawText("press 1 to play multiplayer, q to exit)
+                drawText(pGame->pTestText);
                 if(SDL_PollEvent(&event)) {
                     if(event.type == SDL_QUIT || event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
                     else if(event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_1) {
@@ -256,6 +280,11 @@ void closeGame(Game *pGame) {
     if (pGame->pBall) destroyBall(pGame->pBall);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
+
+    if(pGame->pTestText) destroyText(pGame->pTestText);   
+    if(pGame->pFont) TTF_CloseFont(pGame->pFont);
+
+    TTF_Quit();
     SDL_Quit();
 }
 
