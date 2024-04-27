@@ -113,7 +113,7 @@ int initiate(Game *pGame) {
     pGame->pTestText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"press 1 to play multiplayer, q to exit",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     if(!pGame->pTestText){
         printf("Error: %s\n",SDL_GetError());
-        close(pGame);
+        closeGame(pGame);
         return 0;
     }
 
