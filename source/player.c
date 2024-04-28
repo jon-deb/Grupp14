@@ -3,6 +3,12 @@
 #include "../include/player.h"
 #include <stdlib.h>
 #include <stdio.h>
+#define BALL_WINDOW_X1 64 //distance from left of window to left of field
+#define BALL_WINDOW_X2 1236 //distance from left of window to right of field
+#define BALL_WINDOW_Y1 114 //distance from top of window to top of field
+#define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
+#define WINDOW_HEIGHT_MARGIN_OFFSET 730 //used to calculate middle of field for player
+#define MIDDLE_OF_FIELD_Y 436 //distance from top of window to mid point of field
 
 #define MOVEMENT_SPEED 400
 
@@ -20,12 +26,13 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
         fprintf(stderr, "Memory allocation failed for Player\n");
         return NULL;
     }
-    pPlayer->playerRect.w = 64;
-    pPlayer->playerRect.h = 64;
+    pPlayer->playerRect.w = 20;
+    pPlayer->playerRect.h = 20;
     resetPlayerPos(pPlayer, playerIndex, w, h);
 
     char imagePath[22];
-    snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
+    //snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
+    snprintf(imagePath, sizeof(imagePath), "resources/x.png", playerIndex+1);
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
         fprintf(stderr, "Failed to load player image: %s\n", IMG_GetError());
@@ -125,11 +132,11 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
 {
     int halfWidth = w / 2;
     if (playerIndex == 0) {
-        pPlayer->playerRect.x = halfWidth / 2 - pPlayer->playerRect.w / 2; //mitten av första planhalva
+        pPlayer->playerRect.x = halfWidth / 2 - pPlayer->playerRect.w / 2 + BALL_WINDOW_X1; //mitten av första planhalva
     } else {
-        pPlayer->playerRect.x = halfWidth + (halfWidth / 2 - pPlayer->playerRect.w / 2); //mitten av andra planhalva
+        pPlayer->playerRect.x = halfWidth + (halfWidth / 2 - pPlayer->playerRect.w / 2) - BALL_WINDOW_X1; //mitten av andra planhalva
     }
-    pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
+    pPlayer->playerRect.y = h / 2 + (pPlayer->playerRect.w * 1.5);
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
 }
