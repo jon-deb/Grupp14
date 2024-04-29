@@ -36,8 +36,8 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     pPlayer->playerRect.h = 64;
     resetPlayerPos(pPlayer, playerIndex, w, h);
 
-    char imagePath[22];
-    snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
+    char imagePath[29];
+    snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {

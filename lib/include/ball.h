@@ -1,7 +1,6 @@
-#ifndef BALL_H
-#define BALL_H
+#ifndef ball_h
+#define ball_h
 
-#include <SDL.h>
 #include <stdbool.h>
 
 typedef struct ball Ball;
@@ -18,4 +17,4 @@ void applyFriction(Ball *pBall);
 void restrictBallWithinWindow(Ball *pBall);
 bool goal(Ball *pBall);
 
-#endif /* BALL_H */
+#endif /* ball_h */

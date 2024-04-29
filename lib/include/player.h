@@ -1,8 +1,5 @@
-#ifndef PLAYER_H
-#define PLAYER_H
-
-#include <SDL.h>
-#include <stdbool.h>
+#ifndef player_h
+#define player_h
 
 typedef struct player Player;
 

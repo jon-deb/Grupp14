@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include "ball.h"
 #include <SDL2/SDL_image.h>
+#include <stdbool.h>
 
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
@@ -32,7 +33,7 @@ Ball *createBall(SDL_Renderer *renderer) {
         return NULL;
     }
 
-    ball->surface = IMG_Load("resources/ball2.png");
+    ball->surface = IMG_Load("../lib/resources/ball2.png");
     if (!ball->surface) {
         fprintf(stderr, "Error loading ball texture: %s\n", SDL_GetError());
         free(ball);

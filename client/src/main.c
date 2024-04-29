@@ -77,15 +77,15 @@ int initiate(Game *pGame) {
         return 0;    
     }
 
-    pGame->pFont = TTF_OpenFont("resources/ManaspaceRegular-ZJwZ.ttf", 20);
-    pGame->pScoreboardFont = TTF_OpenFont("resources/ManaspaceRegular-ZJwZ.ttf", 50);
+    pGame->pFont = TTF_OpenFont("../lib/resources/ManaspaceRegular-ZJwZ.ttf", 20);
+    pGame->pScoreboardFont = TTF_OpenFont("../lib/resources/ManaspaceRegular-ZJwZ.ttf", 50);
     if(!pGame->pFont || !pGame->pScoreboardFont){
         printf("Error: %s\n",TTF_GetError());
         closeGame(pGame);
         return 0;
     }
 
-    pGame->pBackgroundSurface = IMG_Load("resources/field_v.3.png");
+    pGame->pBackgroundSurface = IMG_Load("../lib/resources/field_v.3.png");
     if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
