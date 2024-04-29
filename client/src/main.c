@@ -62,6 +62,7 @@ int main(int argc, char** argv) {
 }
 
 int initiate(Game *pGame) {
+    srand(time(NULL));
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
@@ -71,6 +72,13 @@ int initiate(Game *pGame) {
         SDL_Quit();
         return 0;
     }
+    if (SDLNet_Init())
+	{
+		printf("SDLNet_Init: %s\n", SDLNet_GetError());
+        TTF_Quit();
+        SDL_Quit();
+		return 0;
+	}
     pGame->pWindow = SDL_CreateWindow("client", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
