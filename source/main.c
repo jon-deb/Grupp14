@@ -19,8 +19,6 @@
 #define MOVEMENT_SPEED 400
 #define BALL_SPEED_AFTER_COLLISION 500
 #define BORDER_SIZE 20
-#define GOAL_TOP 352
-#define GOAL_BOTTOM 448
 #define PLAYER_MAX 6
 
 typedef struct game {
