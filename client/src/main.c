@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include <math.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
+#include <SDL_net.h>
+#include <SDL_timer.h>
 #include "ball.h"
 #include "player.h"
 #include "state.h"
@@ -28,17 +31,21 @@ typedef struct game {
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
     TTF_Font *pFont, *pScoreboardFont; //, *pScoreFont; //*pTimerFont för annan storlek på timern
-    Text *pIntroText, *pClockText, *pScoreText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
+    Text *pStartText, *pClockText, *pScoreText, *pWaitingText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
     Player *pPlayer[PLAYER_MAX];
     Ball *pBall;
     int nrOfPlayers;
     GameState state;
+
+    UDPsocket pSocket;
+	IPaddress serverAddress;
+	UDPpacket *pPacket;
 } Game;
 
 int initiate(Game *pGame);
 void run(Game *pGame);
 void closeGame(Game *pGame);
-void handleInput(Game *pGame, SDL_Event *event);
+void handleInput(Game *pGame, SDL_Event *pEvent);
 bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 
 void renderMenu(Game *pGame);
@@ -116,10 +123,10 @@ int initiate(Game *pGame) {
         return 0;
     }
 
-    pGame->pIntroText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press 1 to play multiplayer, q to exit",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press 1 to play multiplayer, q to exit",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
     pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
-    if(!pGame->pIntroText || !pGame->pClockText || !pGame->pScoreText){
+    if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText){
         printf("Error: %s\n",SDL_GetError());
         closeGame(pGame);
         return 0;
@@ -131,7 +138,7 @@ int initiate(Game *pGame) {
 
 void run(Game *pGame) {
     int close_requested = 0;
-    SDL_Event event;
+    SDL_Event pEvent;
     Uint32 lastTick = SDL_GetTicks();
     Uint32 currentTick;
     float deltaTime;
@@ -139,9 +146,9 @@ void run(Game *pGame) {
     while (!close_requested) {
         switch(pGame->state) {
             case MENU: 
-                if(SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT || event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
-                    else if(event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_1) {
+                if(SDL_PollEvent(&pEvent)) {
+                    if(pEvent.type == SDL_QUIT || pEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
+                    else if(pEvent.type == SDL_KEYDOWN && pEvent.key.keysym.scancode == SDL_SCANCODE_1) {
                         //användaren skriver in  ip adress
                         //när alla skrivit in rätt ip adress och connectat ändras state till playing
                         pGame->state=PLAYING;
@@ -153,9 +160,9 @@ void run(Game *pGame) {
                 currentTick = SDL_GetTicks();
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
-                while (SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT) close_requested = 1;
-                    else handleInput(pGame, &event);
+                while (SDL_PollEvent(&pEvent)) {
+                    if(pEvent.type == SDL_QUIT) close_requested = 1;
+                    else handleInput(pGame, &pEvent);
                 }
                 for (int i = 0; i < pGame->nrOfPlayers; i++)
                 {
@@ -176,7 +183,7 @@ void run(Game *pGame) {
 void renderMenu(Game *pGame){
     SDL_RenderClear(pGame->pRenderer);
 
-    drawText(pGame->pIntroText);
+    drawText(pGame->pStartText);
 
     SDL_RenderPresent(pGame->pRenderer);
 }
@@ -246,10 +253,10 @@ void handleCollisionsAndPhysics(Game *pGame) {
     }
 }
 
-void handleInput(Game *pGame, SDL_Event *event) {
-    switch (event->type) {
+void handleInput(Game *pGame, SDL_Event *pEvent) {
+    switch (pEvent->type) {
         case SDL_KEYDOWN:
-            switch (event->key.keysym.scancode) {
+            switch (pEvent->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
                 case SDL_SCANCODE_UP:
                     updatePlayerVUp(pGame->pPlayer[0]);
@@ -269,7 +276,7 @@ void handleInput(Game *pGame, SDL_Event *event) {
             }
             break;
         case SDL_KEYUP:
-            switch (event->key.keysym.scancode) {
+            switch (pEvent->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
                 case SDL_SCANCODE_UP:
                 case SDL_SCANCODE_S:
@@ -298,7 +305,7 @@ void closeGame(Game *pGame) {
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
 
-    if(pGame->pIntroText) destroyText(pGame->pIntroText);   
+    if(pGame->pStartText) destroyText(pGame->pStartText);   
     if(pGame->pFont) TTF_CloseFont(pGame->pFont);
     if(pGame->pClockText) destroyText(pGame->pClockText); 
     if(pGame->pScoreText) destroyText(pGame->pScoreText);   
