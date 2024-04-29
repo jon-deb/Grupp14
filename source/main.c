@@ -3,17 +3,22 @@
 #include <stdbool.h>
 #include <math.h>
 #include <SDL2/SDL.h>
+#include <SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 #include "../include/ball.h"
 #include "../include/player.h"
 #include "../include/state.h"
-#define WINDOW_WIDTH 1400
+#include "../include/text.h"
+#define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
+#define BALL_WINDOW_X1 64 //distance from left of window to left of field
+#define BALL_WINDOW_X2 1236 //distance from left of window to right of field
+#define BALL_WINDOW_Y1 114 //distance from top of window to top of field
+#define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
+#define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define MOVEMENT_SPEED 400
 #define BALL_SPEED_AFTER_COLLISION 500
 #define BORDER_SIZE 20
-#define GOAL_TOP 352
-#define GOAL_BOTTOM 448
 #define PLAYER_MAX 6
 
 typedef struct game {
@@ -21,8 +26,8 @@ typedef struct game {
     SDL_Renderer *pRenderer;
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
-    //TTF_Font *pFont, *pScoreFont; //*pTimerFont för annan storlek på timern
-    //Text *pGameModeText, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
+    TTF_Font *pFont, *pScoreboardFont; //, *pScoreFont; //*pTimerFont för annan storlek på timern
+    Text *pIntroText, *pClockText, *pScoreText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
     Player *pPlayer[PLAYER_MAX];
     Ball *pBall;
     int nrOfPlayers;
@@ -35,6 +40,7 @@ void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *event);
 bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 
+void renderMenu(Game *pGame);
 void renderGame(Game *pGame);
 void handleCollisionsAndPhysics(Game *pGame);
 
@@ -52,6 +58,11 @@ int initiate(Game *pGame) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
     }
+    if(TTF_Init()!=0){
+        printf("Error: %s\n",TTF_GetError());
+        SDL_Quit();
+        return 0;
+    }
     pGame->pWindow = SDL_CreateWindow("Football Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
@@ -64,7 +75,16 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
-    pGame->pBackgroundSurface = IMG_Load("resources/newfield.png");
+
+    pGame->pFont = TTF_OpenFont("resources/ManaspaceRegular-ZJwZ.ttf", 20);
+    pGame->pScoreboardFont = TTF_OpenFont("resources/ManaspaceRegular-ZJwZ.ttf", 50);
+    if(!pGame->pFont || !pGame->pScoreboardFont){
+        printf("Error: %s\n",TTF_GetError());
+        closeGame(pGame);
+        return 0;
+    }
+
+    pGame->pBackgroundSurface = IMG_Load("resources/field_v.3.png");
     if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
@@ -94,6 +114,16 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;
     }
+
+    pGame->pIntroText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press 1 to play multiplayer, q to exit",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
+    pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
+    if(!pGame->pIntroText || !pGame->pClockText || !pGame->pScoreText){
+        printf("Error: %s\n",SDL_GetError());
+        closeGame(pGame);
+        return 0;
+    }
+
     pGame->state = MENU;
     return 1;
 }
@@ -108,7 +138,6 @@ void run(Game *pGame) {
     while (!close_requested) {
         switch(pGame->state) {
             case MENU: 
-                //drawText("press 1 to play multiplayer, q to exit)
                 if(SDL_PollEvent(&event)) {
                     if(event.type == SDL_QUIT || event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) close_requested = 1;
                     else if(event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_1) {
@@ -117,6 +146,7 @@ void run(Game *pGame) {
                         pGame->state=PLAYING;
                     }
                 }
+                renderMenu(pGame);
                 break;
             case PLAYING:
                 currentTick = SDL_GetTicks();
@@ -142,17 +172,27 @@ void run(Game *pGame) {
     }
 }
 
+void renderMenu(Game *pGame){
+    SDL_RenderClear(pGame->pRenderer);
+
+    drawText(pGame->pIntroText);
+
+    SDL_RenderPresent(pGame->pRenderer);
+}
+
 void renderGame(Game *pGame) {
     SDL_RenderClear(pGame->pRenderer);
     SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
 
+    drawText(pGame->pClockText);
+    drawText(pGame->pScoreText);
     for (int i = 0; i < pGame->nrOfPlayers; i++) {
         Player *player = pGame->pPlayer[i];
         SDL_Rect playerRect = getPlayerRect(player);
         SDL_Texture *playerTexture = getPlayerTexture(player);
         SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
     }
-
+    
     SDL_Rect ballRect = getBallRect(pGame->pBall);
     SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
     SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
@@ -244,7 +284,7 @@ void handleInput(Game *pGame, SDL_Event *event) {
             }
             break;
     }
-    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
+    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH-300, WINDOW_HEIGHT-200);
 }
 
 void closeGame(Game *pGame) {
@@ -256,6 +296,14 @@ void closeGame(Game *pGame) {
     if (pGame->pBall) destroyBall(pGame->pBall);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
+
+    if(pGame->pIntroText) destroyText(pGame->pIntroText);   
+    if(pGame->pFont) TTF_CloseFont(pGame->pFont);
+    if(pGame->pClockText) destroyText(pGame->pClockText); 
+    if(pGame->pScoreText) destroyText(pGame->pScoreText);   
+    if(pGame->pScoreboardFont) TTF_CloseFont(pGame->pScoreboardFont);
+
+    TTF_Quit();
     SDL_Quit();
 }
 
