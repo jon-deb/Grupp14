@@ -22,7 +22,6 @@
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define MOVEMENT_SPEED 400
 #define BALL_SPEED_AFTER_COLLISION 500
-#define BORDER_SIZE 20
 #define PLAYER_MAX 6
 
 typedef struct game {
@@ -300,7 +299,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
             }
             break;
     }
-    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH-300, WINDOW_HEIGHT-200);
+    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 void closeGame(Game *pGame) {

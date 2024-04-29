@@ -12,8 +12,8 @@
 #define MOVEMENT_SPEED 400
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define FRICTION_COEFFICIENT 0.95f
-#define GOAL_TOP 351.5 //distance from top of window to northern goal post
-#define GOAL_BOTTOM 528 //distance from top of window to southern goal post
+#define GOAL_TOP 357 //distance from top of window to northern goal post
+#define GOAL_BOTTOM 522 //distance from top of window to southern goal post
 
 typedef struct ball {
     SDL_Texture *texture;
