@@ -1,7 +1,6 @@
 #include <SDL.h>
-#include <SDL2/SDL.h>
 #include <SDL_ttf.h>
-#include "../include/text.h"
+#include "text.h"
 
 typedef struct text{
     SDL_Rect rect;

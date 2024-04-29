@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <SDL_ttf.h>
-#include <SDL2/SDL_image.h>
-#include "../include/ball.h"
-#include "../include/player.h"
-#include "../include/state.h"
-#include "../include/text.h"
+#include <SDL_image.h>
+#include "ball.h"
+#include "player.h"
+#include "state.h"
+#include "text.h"
+
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
 #define BALL_WINDOW_X1 64 //distance from left of window to left of field

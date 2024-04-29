@@ -1,6 +1,6 @@
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <SDL_image.h>
-#include "../include/player.h"
+#include "player.h"
 #include <stdlib.h>
 #include <stdio.h>
 #define BALL_WINDOW_X1 64 //distance from left of window to left of field

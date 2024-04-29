@@ -1,4 +1,5 @@
-#include "../include/ball.h"
+#include <SDL.h>
+#include "ball.h"
 #include <SDL2/SDL_image.h>
 
 #define WINDOW_WIDTH 1300

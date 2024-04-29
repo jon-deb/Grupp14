@@ -1,7 +1,7 @@
 #ifndef BALL_H
 #define BALL_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <stdbool.h>
 
 typedef struct ball Ball;

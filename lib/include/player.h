@@ -1,6 +1,9 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <SDL.h>
+#include <stdbool.h>
+
 typedef struct player Player;
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex);

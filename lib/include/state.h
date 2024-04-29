@@ -1,6 +1,9 @@
 #ifndef state_h
 #define state_h
 
+#include <SDL.h>
+#include <stdbool.h>
+
 enum gameState {
     MENU = 0,           
     PLAYING = 1,        //tills tiden är ute
