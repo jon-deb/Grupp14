@@ -84,7 +84,7 @@ int initiate(Game *pGame) {
         return 0;
     }
 
-    pGame->pBackgroundSurface = IMG_Load("resources/field_v.3_lines.png");
+    pGame->pBackgroundSurface = IMG_Load("resources/field_v.3.png");
     if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
         closeGame(pGame);
@@ -284,7 +284,7 @@ void handleInput(Game *pGame, SDL_Event *event) {
             }
             break;
     }
-    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
+    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH-300, WINDOW_HEIGHT-200);
 }
 
 void closeGame(Game *pGame) {

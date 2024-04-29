@@ -31,7 +31,7 @@ Ball *createBall(SDL_Renderer *renderer) {
         return NULL;
     }
 
-    ball->surface = IMG_Load("resources/x.png");
+    ball->surface = IMG_Load("resources/ball2.png");
     if (!ball->surface) {
         fprintf(stderr, "Error loading ball texture: %s\n", SDL_GetError());
         free(ball);
