@@ -180,7 +180,7 @@ int initiate(Game *pGame) {
     return 1;
 }
 
-/*oid run(Game *pGame) {
+/*void run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
     Uint32 lastTick = SDL_GetTicks();

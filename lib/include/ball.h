@@ -16,5 +16,7 @@ void setBallY(Ball *ball, int y);
 void applyFriction(Ball *pBall);
 void restrictBallWithinWindow(Ball *pBall);
 bool goal(Ball *pBall);
+void getBallSendData(Ball *pBall, BallData *pBallData);
+void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);
 
 #endif /* ball_h */

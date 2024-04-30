@@ -18,10 +18,8 @@ struct clientData{
 typedef struct clientData ClientData;
 
 struct ballData{
-    //float x, y, vx, vy;
-    //int time;
-};
 
+};
 typedef struct ballData BallData;
 
 struct playerData{
