@@ -1,6 +1,6 @@
 #include <SDL.h>
 #include "player_data.h"
-#include "pBall.h"
+#include "Ball.h"
 #include <SDL_image.h>
 #include <stdbool.h>
 
@@ -16,7 +16,7 @@
 #define GOAL_TOP 357 //distance from top of window to northern goal post
 #define GOAL_BOTTOM 522 //distance from top of window to southern goal post
 
-typedef struct pBall {
+typedef struct ball {
     SDL_Texture *texture;
     SDL_Rect rect;
     SDL_Surface *surface;
@@ -152,12 +152,12 @@ bool goal(Ball *pBall) {
     return false;
 }
 
-void getBallSendData(Ball *pRocket, BallData *pBallData){
+/*void getBallSendData(Ball *pRocket, BallData *pBallData){
     pBallData->velocityX = pBall->velocityX;
     pBallData->velocityY = pBall->velocityY;
     pBallData->x = pBall->x;
     pBallData->y = pBall->y;
-    //getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
 }
 
 void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
@@ -165,5 +165,5 @@ void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
     pBall->velocityY = pBallData->velocityY; 
     pBall->x = pBallData->x;
     pBall->y = pBallData->y;
-    //updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}
+    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
+}*/

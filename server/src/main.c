@@ -81,7 +81,7 @@ int initiate(Game *pGame){
 		return 0;
 	}
 
-    pGame->pWindow = SDL_CreateWindow("Rocket Server",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
+    pGame->pWindow = SDL_CreateWindow("Server",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
     if(!pGame->pWindow){
         printf("Error: %s\n",SDL_GetError());
         closeGame(pGame);
@@ -127,7 +127,7 @@ int initiate(Game *pGame){
     }
 
     pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for clients",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
             printf("Error: %s\n",SDL_GetError());
@@ -267,7 +267,7 @@ void setUpGame(Game *pGame){
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
     for(int i=0;i<MAX_PLAYERS;i++){
-        getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
+        //getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
     }
     for(int i=0;i<MAX_PLAYERS;i++){
         pGame->sData.clientNr = i;
