@@ -29,13 +29,12 @@ typedef struct game {
     SDL_Renderer *pRenderer;
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
-    TTF_Font *pFont, *pScoreboardFont; //, *pScoreFont; //*pTimerFont för annan storlek på timern
-    Text *pStartText, *pClockText, *pScoreText, *pWaitingText, *pOverText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
+    TTF_Font *pFont, *pScoreboardFont;
+    Text *pStartText, *pClockText, *pScoreText, *pWaitingText, *pOverText;
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     int nrOfPlayers, playerNr;
     GameState state;
-
     UDPsocket pSocket;
 	IPaddress serverAddress;
 	UDPpacket *pPacket;
@@ -410,6 +409,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
             SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
         break;
         restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
+        cData.command = RESTRICT_PLAYER;
     }
 }
 

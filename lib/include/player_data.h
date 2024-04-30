@@ -8,7 +8,7 @@
 enum gameState{START, ONGOING, GAME_OVER};
 typedef enum gameState GameState;
 
-enum clientCommand{READY, UP, DOWN, LEFT, RIGHT, RESET_X_VEL, RESET_Y_VEL};
+enum clientCommand{READY, UP, DOWN, LEFT, RIGHT, RESET_X_VEL, RESET_Y_VEL, RESTRICT_PLAYER};
 typedef enum clientCommand ClientCommand;
 
 typedef struct clientData{
@@ -17,7 +17,8 @@ typedef struct clientData{
 } ClientData;
 
 typedef struct ballData{
-
+    float velocityX, velocityY;
+    int x, y;
 } BallData;
 
 typedef struct playerData{

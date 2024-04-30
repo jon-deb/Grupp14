@@ -5,6 +5,7 @@
     "ball.h": "c",
     "math.h": "c",
     "time.h": "c",
-    "windows.h": "c"
+    "windows.h": "c",
+    "cstdlib": "c"
   }
 }

@@ -24,6 +24,7 @@ struct player {
     float playerVelocityX;
     float playerVelocityY;
     int xPos, yPos;
+    Ball *pBall;
     SDL_Texture *playerTexture;
     SDL_Rect playerRect;
     //SDL_Renderer *pGameRenderer; maybe add
@@ -157,18 +158,18 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
     pPlayer->playerVelocityY = 0;
 }
 
-/*void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
-    pPlayerData->playerVelocityX = xy;
-    pPlayerData->playerVelocityY = vy;
-    pPlayerData->yPos = 
-    pPlayerData->xPos
-    //getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
+    pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
+    pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
+    pPlayerData->yPos = pPlayer->yPos;
+    pPlayerData->xPos = pPlayer->xPos;
+    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
 }
 
 void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
-    pPlayerData->playerVelocityX
-    pPlayerData->playerVelocityY
-    pPlayerData->yPos
-    pPlayerData->xPos
-    //updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}*/
+    pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
+    pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
+    pPlayerData->yPos = pPlayer->yPos;
+    pPlayerData->xPos = pPlayer->xPos;
+    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
+}
