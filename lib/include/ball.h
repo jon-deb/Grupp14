@@ -4,6 +4,8 @@
 #include <stdbool.h>
 
 typedef struct ball Ball;
+typedef struct ballData BallData;
+
 
 Ball *createBall(SDL_Renderer *renderer);
 void updateBallPosition(Ball *ball);
@@ -16,7 +18,7 @@ void setBallY(Ball *ball, int y);
 void applyFriction(Ball *pBall);
 void restrictBallWithinWindow(Ball *pBall);
 bool goal(Ball *pBall);
-//void getBallSendData(Ball *pBall, BallData *pBallData);
-//void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);
+void getBallSendData(Ball *pBall, BallData *pBallData);
+void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);
 
 #endif /* ball_h */

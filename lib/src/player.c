@@ -158,7 +158,7 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
     pPlayer->playerVelocityY = 0;
 }
 
-/*void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
+void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
     pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
     pPlayerData->yPos = pPlayer->yPos;
@@ -172,4 +172,4 @@ void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayerData->yPos = pPlayer->yPos;
     pPlayerData->xPos = pPlayer->xPos;
     updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}*/
+}
