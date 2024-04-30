@@ -6,6 +6,7 @@
     "math.h": "c",
     "time.h": "c",
     "windows.h": "c",
-    "cstdlib": "c"
+    "cstdlib": "c",
+    "stdbool.h": "c"
   }
 }

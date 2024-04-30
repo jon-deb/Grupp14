@@ -1,7 +1,6 @@
 #include <SDL.h>
 #include "player_data.h"
-#include "ball.h"
-#include "player.h"
+#include "Ball.h"
 #include <SDL_image.h>
 #include <stdbool.h>
 
@@ -153,7 +152,7 @@ bool goal(Ball *pBall) {
     return false;
 }
 
-void getBallSendData(Ball *pRocket, BallData *pBallData){
+/*void getBallSendData(Ball *pRocket, BallData *pBallData){
     pBallData->velocityX = pBall->velocityX;
     pBallData->velocityY = pBall->velocityY;
     pBallData->x = pBall->x;
@@ -167,4 +166,4 @@ void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
     pBall->x = pBallData->x;
     pBall->y = pBallData->y;
     updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}
+}*/
