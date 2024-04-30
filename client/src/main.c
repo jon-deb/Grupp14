@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <math.h>
+#include <windows.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
@@ -351,15 +352,15 @@ void updateWithServerData(Game *pGame){
     pGame->playerNr = sData.clientNr;
     pGame->state = sData.gState;
     for(int i=0;i<MAX_PLAYERS;i++){
-        updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
+        //updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
     }
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent) {
+    ClientData cData;
     switch (pEvent->type) {
-        ClientData cData;
-        cData.clientNumber = pGame->playerNr;
         case SDL_KEYDOWN:
+            cData.clientNumber = pGame->playerNr;
             switch (pEvent->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
                 case SDL_SCANCODE_UP:
@@ -382,8 +383,12 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
                     cData.command = RIGHT;
                     break;
             }
-            break;
+            memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
+            pGame->pPacket->len = sizeof(ClientData);
+            SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
+        break;
         case SDL_KEYUP:
+            cData.clientNumber = pGame->playerNr;
             switch (pEvent->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
                 case SDL_SCANCODE_UP:
@@ -400,12 +405,11 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
                     cData.command = RESET_X_VEL;
                     break;
             }
-            break;
-            
-            restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
             memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
             pGame->pPacket->len = sizeof(ClientData);
             SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
+        break;
+        restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 }
 

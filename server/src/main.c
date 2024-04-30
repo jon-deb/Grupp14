@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <windows.h>
 #include <SDL.h>
@@ -16,9 +17,8 @@
 struct game{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Rocket *pRocket[MAX_ROCKETS];
+    Rocket *pRocket[MAX_PLAYERS];
     int nr_of_rockets;
-    Stars *pStars;
     TTF_Font *pFont, *pScoreFont;
     Text *pOverText, *pStartText;
     GameState state;

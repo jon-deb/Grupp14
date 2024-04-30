@@ -1,7 +1,7 @@
 #include <SDL.h>
 #include "player_data.h"
 #include "ball.h"
-#include <SDL2/SDL_image.h>
+#include <SDL_image.h>
 #include <stdbool.h>
 
 #define WINDOW_WIDTH 1300
@@ -152,18 +152,18 @@ bool goal(Ball *pBall) {
     return false;
 }
 
-void getRocketSendData(Ball *pRocket, BallData *pBallData){
-    /*pRocketData->velocityX
-    pRocketData->velocityY
-    pRocketData->x
-    pRocketData->t*/
+/*void getBallSendData(Ball *pRocket, BallData *pBallData){
+    pBallData->velocityX
+    pBallData->velocityY
+    pBallData->x
+    pBallData->t
     //getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
 }
 
-void updateRocketWithRecievedData(Ball *pBall, BallData *pBallData){
-    /*pRocketData->velocityX
-    pRocketData->velocityY
-    pRocketData->x
-    pRocketData->t*/
+void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
+    pBallData->velocityX
+    pBallData->velocityY
+    pBallData->x
+    pBallData->t
     //updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}
+}*/

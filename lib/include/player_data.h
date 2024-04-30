@@ -11,29 +11,25 @@ typedef enum gameState GameState;
 enum clientCommand{READY, UP, DOWN, LEFT, RIGHT, RESET_X_VEL, RESET_Y_VEL};
 typedef enum clientCommand ClientCommand;
 
-struct clientData{
+typedef struct clientData{
     ClientCommand command;
     int clientNumber;
-};
-typedef struct clientData ClientData;
+} ClientData;
 
-struct ballData{
+typedef struct ballData{
 
-};
-typedef struct ballData BallData;
+} BallData;
 
-struct playerData{
+typedef struct playerData{
     float playerVelocityX, playerVelocityY;
     int xPos, yPos;
     BallData bData;
-};
-typedef struct playerData PlayerData;   
+} PlayerData;   
 
-struct serverData{
+typedef struct serverData{
     PlayerData players[MAX_PLAYERS];
     int clientNr;
     GameState gState;
-};
-typedef struct serverData ServerData;
+} ServerData;
 
 #endif
