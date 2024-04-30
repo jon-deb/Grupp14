@@ -9,8 +9,8 @@
 #include <SDL_net.h>
 #include <SDL_timer.h>
 #include "ball.h"
+#include "player_data.h"
 #include "player.h"
-#include "state.h"
 #include "text.h"
 
 #define WINDOW_WIDTH 1300
@@ -29,10 +29,10 @@ typedef struct game {
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
     TTF_Font *pFont, *pScoreboardFont; //, *pScoreFont; //*pTimerFont för annan storlek på timern
-    Text *pStartText, *pClockText, *pScoreText, *pWaitingText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
+    Text *pStartText, *pClockText, *pScoreText, *pWaitingText, *pOverText; //, *pChooseTeamText, *pStartTimerText, *pMatchTimerText, *pScoreText, *pTeamNamesText;
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
-    int nrOfPlayers;
+    int nrOfPlayers, playerNr;
     GameState state;
 
     UDPsocket pSocket;
@@ -44,10 +44,11 @@ int initiate(Game *pGame);
 void run(Game *pGame);
 void closeGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
+void updateWithServerData(Game *pGame);
 
-void renderMenu(Game *pGame);
 void renderGame(Game *pGame);
+
+bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 void handleCollisionsAndPhysics(Game *pGame);
 
 
@@ -139,7 +140,7 @@ int initiate(Game *pGame) {
         }
     }*/
 
-    for (int i = 0; i < pGame->MAX_PLAYERS; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
             fprintf(stderr, "Failed to initialize player %d\n", i + 1);
@@ -156,11 +157,12 @@ int initiate(Game *pGame) {
         return 0;
     }
 
-    pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press 1 to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
     pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
-    if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText || !pGame->pWaitingText){
+    if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText || !pGame->pWaitingText || !pGame->pOverText){
         printf("Error: %s\n",SDL_GetError());
         closeGame(pGame);
         return 0;
@@ -178,35 +180,22 @@ int initiate(Game *pGame) {
     return 1;
 }
 
-void run(Game *pGame) {
+/*oid run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
+    Uint32 lastTick = SDL_GetTicks();
+    Uint32 currentTick;
+    float deltaTime;
 
-    int joining = 0;
     while (!close_requested) {
         switch(pGame->state) {
-            case ONGOING: 
-                while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
-                    updateWithServerData(pGame);
-                }
-
-
-                if(SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT) close_requested = 1;
-                    else handleInput(pGame,&event);
-                }
-                //renderMenu(pGame);
-                for(int i=0;i<MAX_ROCKETS;i++)
-                    updatePlayerPosition(pGame->pPlayer[i], deltaTime);
-
-                break;
             case PLAYING:
                 currentTick = SDL_GetTicks();
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
-                while (SDL_PollEvent(&pEvent)) {
-                    if(pEvent.type == SDL_QUIT) close_requested = 1;
-                    else handleInput(pGame, &pEvent);
+                while (SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) close_requested = 1;
+                    else handleInput(pGame, &event);
                 }
                 for (int i = 0; i < pGame->nrOfPlayers; i++)
                 {
@@ -222,14 +211,73 @@ void run(Game *pGame) {
                 break;
         }
     }
-}
+}*/
 
-void renderMenu(Game *pGame){
-    SDL_RenderClear(pGame->pRenderer);
+void run(Game *pGame) {
+    int close_requested = 0;
+    SDL_Event event;
+    ClientData cData;
 
-    drawText(pGame->pStartText);
+    Uint32 lastTick = SDL_GetTicks();
+    Uint32 currentTick;
+    float deltaTime;
 
-    SDL_RenderPresent(pGame->pRenderer);
+    int joining = 0;
+    while (!close_requested) {
+        switch(pGame->state) {
+            case ONGOING:                
+                while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
+                    updateWithServerData(pGame);
+                }
+
+                currentTick = SDL_GetTicks();
+                deltaTime = (currentTick - lastTick) / 1000.0f;
+                lastTick = currentTick;
+
+                while (SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) close_requested = 1;
+                    else handleInput(pGame, &event);
+                }
+                for (int i = 0; i < MAX_PLAYERS; i++)
+                {
+                    updatePlayerPosition(pGame->pPlayer[i], deltaTime);
+                    restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
+                    //updatePlayerPosition(pGame->pPlayer, deltaTime);
+                }
+                renderGame(pGame);
+
+                break;
+            case GAME_OVER:
+                drawText(pGame->pOverText);
+                break;
+            case START:
+                if (!joining)
+                {
+                    drawText(pGame->pStartText);
+                }else{
+                    SDL_RenderClear(pGame->pRenderer);
+                    drawText(pGame->pWaitingText);
+                }
+                SDL_RenderPresent(pGame->pRenderer);
+                if(SDL_PollEvent(&event)){
+                    if(event.type==SDL_QUIT) close_requested = 1;
+                    else if(!joining && event.type==SDL_KEYDOWN && event.key.keysym.scancode==SDL_SCANCODE_SPACE){
+                        joining = 1;
+                        cData.command=READY;
+                        cData.clientNumber=-1;
+                        memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
+		                pGame->pPacket->len = sizeof(ClientData);
+                    }
+                }
+                if(joining) SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
+                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
+                    updateWithServerData(pGame);
+                    if(pGame->state == ONGOING) joining = 0;
+                }                
+                break;
+        }
+                //SDL_Delay(1000/60-15);//might work when you run on different processors
+    }
 }
 
 void renderGame(Game *pGame) {
@@ -238,7 +286,7 @@ void renderGame(Game *pGame) {
 
     drawText(pGame->pClockText);
     drawText(pGame->pScoreText);
-    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         Player *player = pGame->pPlayer[i];
         SDL_Rect playerRect = getPlayerRect(player);
         SDL_Texture *playerTexture = getPlayerTexture(player);
@@ -255,7 +303,7 @@ void renderGame(Game *pGame) {
 }
 
 void handleCollisionsAndPhysics(Game *pGame) {
-    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         Player *currentPlayer = pGame->pPlayer[i];
         SDL_Rect playerRect = getPlayerRect(currentPlayer);
         SDL_Rect ballRect = getBallRect(pGame->pBall);
@@ -297,25 +345,41 @@ void handleCollisionsAndPhysics(Game *pGame) {
     }
 }
 
+void updateWithServerData(Game *pGame){
+    ServerData sData;
+    memcpy(&sData, pGame->pPacket->data, sizeof(ServerData));
+    pGame->playerNr = sData.clientNr;
+    pGame->state = sData.gState;
+    for(int i=0;i<MAX_PLAYERS;i++){
+        updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
+    }
+}
+
 void handleInput(Game *pGame, SDL_Event *pEvent) {
     switch (pEvent->type) {
+        ClientData cData;
+        cData.clientNumber = pGame->playerNr;
         case SDL_KEYDOWN:
             switch (pEvent->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
                 case SDL_SCANCODE_UP:
-                    updatePlayerVUp(pGame->pPlayer[0]);
+                    updatePlayerVUp(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = UP;
                     break;
                 case SDL_SCANCODE_S:
                 case SDL_SCANCODE_DOWN:
-                    updatePlayerVDown(pGame->pPlayer[0]);
+                    updatePlayerVDown(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = DOWN;
                     break;
                 case SDL_SCANCODE_A:
                 case SDL_SCANCODE_LEFT:
-                    updatePlayerVLeft(pGame->pPlayer[0]);
+                    updatePlayerVLeft(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = LEFT;
                     break;
                 case SDL_SCANCODE_D:
                 case SDL_SCANCODE_RIGHT:
-                    updatePlayerVRight(pGame->pPlayer[0]);
+                    updatePlayerVRight(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = RIGHT;
                     break;
             }
             break;
@@ -325,22 +389,28 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
                 case SDL_SCANCODE_UP:
                 case SDL_SCANCODE_S:
                 case SDL_SCANCODE_DOWN:
-                    resetPlayerSpeed(pGame->pPlayer[0], 0, 1);
+                    resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 0, 1);
+                    cData.command = RESET_Y_VEL;
                     break;
                 case SDL_SCANCODE_A:
                 case SDL_SCANCODE_LEFT:
                 case SDL_SCANCODE_D:
                 case SDL_SCANCODE_RIGHT:
-                    resetPlayerSpeed(pGame->pPlayer[0], 1, 0);
+                    resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 1, 0);
+                    cData.command = RESET_X_VEL;
                     break;
             }
             break;
+            
+            restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
+            memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
+            pGame->pPacket->len = sizeof(ClientData);
+            SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
     }
-    restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 void closeGame(Game *pGame) {
-    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         if (pGame->pPlayer[i]) {
             destroyPlayer(pGame->pPlayer[i]);
         }
@@ -350,11 +420,14 @@ void closeGame(Game *pGame) {
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
 
     if(pGame->pStartText) destroyText(pGame->pStartText);   
+    if(pGame->pStartText) destroyText(pGame->pWaitingText); 
+    if(pGame->pStartText) destroyText(pGame->pOverText); 
     if(pGame->pFont) TTF_CloseFont(pGame->pFont);
     if(pGame->pClockText) destroyText(pGame->pClockText); 
     if(pGame->pScoreText) destroyText(pGame->pScoreText);   
     if(pGame->pScoreboardFont) TTF_CloseFont(pGame->pScoreboardFont);
 
+    SDLNet_Quit();
     TTF_Quit();
     SDL_Quit();
 }

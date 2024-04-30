@@ -1,6 +1,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include "player.h"
+#include "player_data.h"
+#include "ball.h"
 #include <stdlib.h>
 #include <stdio.h>
 #define BALL_WINDOW_X1 64 //distance from left of window to left of field
@@ -24,6 +26,8 @@ struct player {
     int xPos, yPos;
     SDL_Texture *playerTexture;
     SDL_Rect playerRect;
+    //SDL_Renderer *pGameRenderer; maybe add
+
 };
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex) {
@@ -151,4 +155,20 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
     pPlayer->playerRect.y = MIDDLE_OF_FIELD_Y - (pPlayer->playerRect.h/2);
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
+}
+
+void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
+    /*pPlayerData->playerVelocityX
+    pPlayerData->playerVelocityY
+    pPlayerData->yPos
+    pPlayerData->xPos*/
+    //getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+}
+
+void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
+    /*pPlayerData->playerVelocityX
+    pPlayerData->playerVelocityY
+    pPlayerData->yPos
+    pPlayerData->xPos*/
+    //updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
 }
