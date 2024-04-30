@@ -15,13 +15,8 @@
 
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
-#define BALL_WINDOW_X1 64 //distance from left of window to left of field
-#define BALL_WINDOW_X2 1236 //distance from left of window to right of field
-#define BALL_WINDOW_Y1 114 //distance from top of window to top of field
-#define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define MOVEMENT_SPEED 400
-#define BALL_SPEED_AFTER_COLLISION 500
 
 typedef struct game{
     SDL_Window *pWindow;
@@ -44,14 +39,14 @@ typedef struct game{
 int initiate(Game *pGame);
 void run(Game *pGame);
 void renderGame(Game *pGame);
-void closeGame(Game *pGame);
 void handleInput(Game *pGame,SDL_Event *pEvent);
-void handleCollisionsAndPhysics(Game *pGame);
+//void handleCollisionsAndPhysics(Game *pGame);
 void add(IPaddress address, IPaddress clients[],int *pNrOfClients);
 void sendGameData(Game *pGame);
 void executeCommand(Game *pGame,ClientData cData);
 void setUpGame(Game *pGame);
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
+//bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
+void closeGame(Game *pGame);
 
 int main(int argv, char** args){
     Game g={0};
@@ -172,6 +167,16 @@ void run(Game *pGame){
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
                     //updatePlayerPosition(pGame->pPlayer, deltaTime);
                 }
+                for (int i=0; i<pGame->nrOfPlayers; i++) {
+                    SDL_Rect playerRect = getPlayerRect(pGame->pPlayer[i]);
+                    SDL_Rect ballRect = getBallRect(pGame->pBall);
+                    handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
+                }
+                if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
+                else {
+                    for(int i = 0; i < pGame->nrOfPlayers; i++)
+                        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+                }
                 renderGame(pGame);
                 
                 break;
@@ -212,10 +217,10 @@ void renderGame(Game *pGame) {
 
     SDL_RenderPresent(pGame->pRenderer);
     SDL_Delay(1000/60); 
-    handleCollisionsAndPhysics(pGame);
+    //handleCollisionsAndPhysics(pGame);
 }
 
-void handleCollisionsAndPhysics(Game *pGame) {
+/*void handleCollisionsAndPhysics(Game *pGame) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
         Player *currentPlayer = pGame->pPlayer[i];
         SDL_Rect playerRect = getPlayerRect(currentPlayer);
@@ -256,7 +261,7 @@ void handleCollisionsAndPhysics(Game *pGame) {
             resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
         }
     }
-}
+}*/
 
 void setUpGame(Game *pGame){
     for(int i=0;i<MAX_PLAYERS;i++) resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -334,10 +339,10 @@ void closeGame(Game *pGame){
     SDL_Quit();
 }
 
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
+/*bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
     if (rect1.y + rect1.h <= rect2.y) return false; // Bottom is above top
     if (rect1.y >= rect2.y + rect2.h) return false; // Top is below bottom
     if (rect1.x + rect1.w <= rect2.x) return false; // Right is left of left
     if (rect1.x >= rect2.x + rect2.w) return false; // Left is right of right
     return true;
-}
+}*/

@@ -16,6 +16,8 @@ void setBallX(Ball *ball, int x);
 void setBallY(Ball *ball, int y);
 void applyFriction(Ball *pBall);
 void restrictBallWithinWindow(Ball *pBall);
+void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall);
+int checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 bool goal(Ball *pBall);
 //void getBallSendData(Ball *pBall, BallData *pBallData);
 //void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);

@@ -16,8 +16,6 @@
 #define NORTH_PLAYER_BORDER 114 //distance from top of window to northern player border
 #define SOUTH_PLAYER_BORDER 765 //distance from top of window to souther player border
 
-
-
 #define MOVEMENT_SPEED 400
 
 struct player {
@@ -28,7 +26,6 @@ struct player {
     SDL_Texture *playerTexture;
     SDL_Rect playerRect;
     //SDL_Renderer *pGameRenderer; maybe add
-
 };
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex) {
@@ -39,7 +36,7 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     }
     pPlayer->playerRect.w = 64;
     pPlayer->playerRect.h = 64;
-    resetPlayerPos(pPlayer, playerIndex, w, h);
+    setStartingPosition(pPlayer, playerIndex, w, h);
 
     char imagePath[29];
     snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
@@ -59,16 +56,6 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
         return NULL;
     }
     return pPlayer;
-}
-
-void destroyPlayer(Player *pPlayer) {
-    if (pPlayer != NULL) {
-        if (pPlayer->playerTexture != NULL) {
-            SDL_DestroyTexture(pPlayer->playerTexture);
-            pPlayer->playerTexture = NULL;
-        }
-        free(pPlayer);
-    }
 }
 
 void updatePlayerVelocity(Player *pPlayer, float vx, float vy) {
@@ -124,6 +111,33 @@ void setPlayerPosition(Player *pPlayer, int x, int y) {
     pPlayer->playerRect.y = y;
 }
 
+void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h) {
+    pPlayer->playerVelocityX = 0;
+    pPlayer->playerVelocityY = 0;
+    /*spelare 0, 2 och 4 är i samma lag
+    spelare 1, 3, och 5 är i samma lag
+    lag beror på vilken ordning man joinar*/
+    if(playerIndex == 0 || playerIndex == 1) {
+        pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2;
+        if(playerIndex == 1) {
+            pPlayer->playerRect.x += w/2; 
+        }
+        pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
+    }
+    /*else if(playerIndex == 2 || playerIndex == 3) {
+        
+        if(playerIndex == 3) {
+            
+        }
+    }
+    else if(playerIndex == 4 || playerIndex == 5) {
+
+        if(playerIndex == 5) {
+
+        }
+    }*/
+}
+
 void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {
     if (pPlayer->playerRect.x < 0) { 
         setPlayerPosition(pPlayer, 0, pPlayer->playerRect.y); 
@@ -173,3 +187,13 @@ void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayerData->xPos = pPlayer->xPos;
     updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
 }*/
+
+void destroyPlayer(Player *pPlayer) {
+    if (pPlayer != NULL) {
+        if (pPlayer->playerTexture != NULL) {
+            SDL_DestroyTexture(pPlayer->playerTexture);
+            pPlayer->playerTexture = NULL;
+        }
+        free(pPlayer);
+    }
+}

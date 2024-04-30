@@ -15,6 +15,7 @@ void updatePlayerVDown(Player *pPlayer);
 void updatePlayerVLeft(Player *pPlayer);
 void updatePlayerVRight(Player *pPlayer);
 void updatePlayerPosition(Player *pPlayer, float deltaTime);
+void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h);
 void resetPlayerSpeed(Player *pPlayer, int x, int y);
 int getPlayerSpeedY(Player *pPlayer);
 int getPlayerSpeedX(Player *pPlayer);

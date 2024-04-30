@@ -13,8 +13,10 @@
 #define MOVEMENT_SPEED 400
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define FRICTION_COEFFICIENT 0.95f
+#define BALL_SPEED_AFTER_COLLISION 500
 #define GOAL_TOP 357 //distance from top of window to northern goal post
 #define GOAL_BOTTOM 522 //distance from top of window to southern goal post
+
 
 typedef struct ball {
     SDL_Texture *texture;
@@ -24,8 +26,6 @@ typedef struct ball {
     float velocityY;
     bool collided;
 } Ball;
-
-
 
 Ball *createBall(SDL_Renderer *renderer) {
     Ball *pBall = malloc(sizeof(Ball));
@@ -65,11 +65,6 @@ void updateBallPosition(Ball *pBall) {
     pBall->rect.y += pBall->velocityY / 60;
 }
 
-void destroyBall(Ball *pBall) {
-    if (pBall->texture) SDL_DestroyTexture(pBall->texture);
-    free(pBall);
-}
-
 SDL_Texture *getBallTexture(Ball *pBall) {
     return pBall->texture;
 }
@@ -91,9 +86,7 @@ void setBallY(Ball *pBall, int y) {
     pBall->rect.y = y;
 }
 
-
 void applyFriction(Ball *pBall) {
-    // skapar variabel och sätter till hastigheterna
     float vx = pBall->velocityX;
     float vy = pBall->velocityY;
     
@@ -101,32 +94,19 @@ void applyFriction(Ball *pBall) {
     vx *= FRICTION_COEFFICIENT;
     vy *= FRICTION_COEFFICIENT;
 
-    // ny hastighet
     setBallVelocity(pBall, vx, vy);
 }
-
 
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if (ballRect.x < BALL_WINDOW_X1) {
-        if (ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM)
-        {
-            setBallX(pBall, 0);
-        }
-        else
-        {
-            setBallX(pBall, BALL_WINDOW_X1);
-        }
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, 0);
+        else setBallX(pBall, BALL_WINDOW_X1);
         pBall->velocityX = -pBall->velocityX;
-    } if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
-        if (ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM)
-        {
-            setBallX(pBall, WINDOW_WIDTH);
-        }
-        else
-        {
-            setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
-        }
+    } 
+    if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, WINDOW_WIDTH);
+        else setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
         pBall->velocityX = -pBall->velocityX;
     }
     if (ballRect.y < BALL_WINDOW_Y1) {
@@ -138,7 +118,34 @@ void restrictBallWithinWindow(Ball *pBall) {
     }
 }
 
+void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
+    if(checkCollision(pRect, bRect)) {
+        float playerCenterX = pRect.x + pRect.w / 2;
+        float playerCenterY = pRect.y + pRect.h / 2;
+        float ballCenterX = bRect.x + bRect.w / 2;
+        float ballCenterY = bRect.y + bRect.h / 2;
 
+        float collisionVectorX = ballCenterX - playerCenterX;
+        float collisionVectorY = ballCenterY - playerCenterY;
+
+        float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
+
+        float normalX = collisionVectorX / distance;
+        float normalY = collisionVectorY / distance;
+
+        setBallVelocity(pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
+    }
+    applyFriction(pBall);
+    updateBallPosition(pBall);
+}
+
+int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
+    if (rect1.y + rect1.h <= rect2.y) return 0; // Bottom is above top
+    if (rect1.y >= rect2.y + rect2.h) return 0; // Top is below bottom
+    if (rect1.x + rect1.w <= rect2.x) return 0; // Right is left of left
+    if (rect1.x >= rect2.x + rect2.w) return 0; // Left is right of right
+    return 1;
+}
 
 bool goal(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
@@ -167,3 +174,8 @@ void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
     pBall->y = pBallData->y;
     updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
 }*/
+
+void destroyBall(Ball *pBall) {
+    if (pBall->texture) SDL_DestroyTexture(pBall->texture);
+    free(pBall);
+}

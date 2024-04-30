@@ -22,7 +22,6 @@
 #define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define MOVEMENT_SPEED 400
-#define BALL_SPEED_AFTER_COLLISION 500
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -42,15 +41,10 @@ typedef struct game {
 
 int initiate(Game *pGame);
 void run(Game *pGame);
-void closeGame(Game *pGame);
+void renderGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 void updateWithServerData(Game *pGame);
-
-void renderGame(Game *pGame);
-
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2);
-void handleCollisionsAndPhysics(Game *pGame);
-
+void closeGame(Game *pGame);
 
 int main(int argc, char** argv) {
     Game g = {0};
@@ -71,8 +65,7 @@ int initiate(Game *pGame) {
         SDL_Quit();
         return 0;
     }
-    if (SDLNet_Init())
-	{
+    if (SDLNet_Init()) {
 		printf("SDLNet_Init: %s\n", SDLNet_GetError());
         TTF_Quit();
         SDL_Quit();
@@ -99,18 +92,15 @@ int initiate(Game *pGame) {
         return 0;
     }
 
-    if (!(pGame->pSocket = SDLNet_UDP_Open(0)))//0 means not a server
-	{
+    if (!(pGame->pSocket = SDLNet_UDP_Open(0))) {//0 means not a server
 		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
 		return 0;
 	}
-	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000))
-	{
+	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
 		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
 	}
-    if (!(pGame->pPacket = SDLNet_AllocPacket(512)))
-	{
+    if (!(pGame->pPacket = SDLNet_AllocPacket(512))) {
 		printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
 		return 0;
 	}
@@ -144,7 +134,6 @@ int initiate(Game *pGame) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
             fprintf(stderr, "Failed to initialize player %d\n", i + 1);
-
             return 0;
         }
     }
@@ -180,39 +169,6 @@ int initiate(Game *pGame) {
     return 1;
 }
 
-/*void run(Game *pGame) {
-    int close_requested = 0;
-    SDL_Event event;
-    Uint32 lastTick = SDL_GetTicks();
-    Uint32 currentTick;
-    float deltaTime;
-
-    while (!close_requested) {
-        switch(pGame->state) {
-            case PLAYING:
-                currentTick = SDL_GetTicks();
-                deltaTime = (currentTick - lastTick) / 1000.0f;
-                lastTick = currentTick;
-                while (SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT) close_requested = 1;
-                    else handleInput(pGame, &event);
-                }
-                for (int i = 0; i < pGame->nrOfPlayers; i++)
-                {
-                    updatePlayerPosition(pGame->pPlayer[i], deltaTime);
-                    restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
-                    //updatePlayerPosition(pGame->pPlayer, deltaTime);
-                }
-                renderGame(pGame);
-                break;
-            case GAMEOVER:
-                //drawtext team X won!
-                pGame->state = MENU;
-                break;
-        }
-    }
-}*/
-
 void run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
@@ -243,6 +199,16 @@ void run(Game *pGame) {
                     updatePlayerPosition(pGame->pPlayer[i], deltaTime);
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
                     //updatePlayerPosition(pGame->pPlayer, deltaTime);
+                }
+                for (int i=0; i<pGame->nrOfPlayers; i++) {
+                    SDL_Rect playerRect = getPlayerRect(pGame->pPlayer[i]);
+                    SDL_Rect ballRect = getBallRect(pGame->pBall);
+                    handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
+                }
+                if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
+                else {
+                    for(int i = 0; i < pGame->nrOfPlayers; i++)
+                        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
                 }
                 renderGame(pGame);
 
@@ -299,50 +265,6 @@ void renderGame(Game *pGame) {
 
     SDL_RenderPresent(pGame->pRenderer);
     SDL_Delay(1000/60); 
-    handleCollisionsAndPhysics(pGame);
-}
-
-void handleCollisionsAndPhysics(Game *pGame) {
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        Player *currentPlayer = pGame->pPlayer[i];
-        SDL_Rect playerRect = getPlayerRect(currentPlayer);
-        SDL_Rect ballRect = getBallRect(pGame->pBall);
-    
-        if(checkCollision(playerRect, ballRect)) {
-            // räknar mittpunkten för spelare och bollen
-            float playerCenterX = playerRect.x + playerRect.w / 2;
-            float playerCenterY = playerRect.y + playerRect.h / 2;
-            float ballCenterX = ballRect.x + ballRect.w / 2;
-            float ballCenterY = ballRect.y + ballRect.h / 2;
-
-            // beräknar vektorn
-            float collisionVectorX = ballCenterX - playerCenterX;
-            float collisionVectorY = ballCenterY - playerCenterY;
-            
-            // räknar distansen
-            float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
-
-            // normaliserar vektorn
-            float normalX = collisionVectorX / distance;
-            float normalY = collisionVectorY / distance;
-
-            // update på hastigheten efter collision
-            setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
-        }
-    }
-    applyFriction(pGame->pBall);
-    updateBallPosition(pGame->pBall);
-    if (!goal(pGame->pBall))
-    {
-        restrictBallWithinWindow(pGame->pBall);
-    }
-    else
-    {
-        for (int i = 0; i < pGame->nrOfPlayers; i++)
-        {
-            resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-        }
-    }
 }
 
 void updateWithServerData(Game *pGame){
@@ -435,14 +357,3 @@ void closeGame(Game *pGame) {
     TTF_Quit();
     SDL_Quit();
 }
-
-bool checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
-    if (rect1.y + rect1.h <= rect2.y) return false; // Bottom is above top
-    if (rect1.y >= rect2.y + rect2.h) return false; // Top is below bottom
-    if (rect1.x + rect1.w <= rect2.x) return false; // Right is left of left
-    if (rect1.x >= rect2.x + rect2.w) return false; // Left is right of right
-    return true;
-}
-
-
-
