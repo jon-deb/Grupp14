@@ -1,10 +1,10 @@
-#ifndef BALL_H
-#define BALL_H
+#ifndef ball_h
+#define ball_h
 
-#include <SDL2/SDL.h>
 #include <stdbool.h>
 
 typedef struct ball Ball;
+typedef struct ballData BallData;
 
 Ball *createBall(SDL_Renderer *renderer);
 void updateBallPosition(Ball *ball);
@@ -17,5 +17,7 @@ void setBallY(Ball *ball, int y);
 void applyFriction(Ball *pBall);
 void restrictBallWithinWindow(Ball *pBall);
 bool goal(Ball *pBall);
+//void getBallSendData(Ball *pBall, BallData *pBallData);
+//void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);
 
-#endif /* BALL_H */
+#endif /* ball_h */

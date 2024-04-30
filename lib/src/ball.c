@@ -1,5 +1,8 @@
-#include "../include/ball.h"
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include "player_data.h"
+#include "Ball.h"
+#include <SDL_image.h>
+#include <stdbool.h>
 
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
@@ -10,8 +13,8 @@
 #define MOVEMENT_SPEED 400
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define FRICTION_COEFFICIENT 0.95f
-#define GOAL_TOP 351.5 //distance from top of window to northern goal post
-#define GOAL_BOTTOM 528 //distance from top of window to southern goal post
+#define GOAL_TOP 357 //distance from top of window to northern goal post
+#define GOAL_BOTTOM 522 //distance from top of window to southern goal post
 
 typedef struct ball {
     SDL_Texture *texture;
@@ -25,67 +28,67 @@ typedef struct ball {
 
 
 Ball *createBall(SDL_Renderer *renderer) {
-    Ball *ball = malloc(sizeof(Ball));
-    if (!ball) {
-        fprintf(stderr, "Failed to allocate memory for ball.\n");
+    Ball *pBall = malloc(sizeof(Ball));
+    if (!pBall) {
+        fprintf(stderr, "Failed to allocate memory for pBall.\n");
         return NULL;
     }
 
-    ball->surface = IMG_Load("resources/ball2.png");
-    if (!ball->surface) {
-        fprintf(stderr, "Error loading ball texture: %s\n", SDL_GetError());
-        free(ball);
+    pBall->surface = IMG_Load("../lib/resources/ball2.png");
+    if (!pBall->surface) {
+        fprintf(stderr, "Error loading pBall texture: %s\n", SDL_GetError());
+        free(pBall);
         return NULL;
     }
 
-    ball->texture = SDL_CreateTextureFromSurface(renderer, ball->surface);
-    SDL_FreeSurface(ball->surface);
-    if (!ball->texture) {
-        fprintf(stderr, "Error creating ball texture: %s\n", SDL_GetError());
-        free(ball);
+    pBall->texture = SDL_CreateTextureFromSurface(renderer, pBall->surface);
+    SDL_FreeSurface(pBall->surface);
+    if (!pBall->texture) {
+        fprintf(stderr, "Error creating pBall texture: %s\n", SDL_GetError());
+        free(pBall);
         return NULL;
     }
 
-    ball->rect.w = 32;
-    ball->rect.h = 32;
-    ball->rect.x = WINDOW_WIDTH / 2 - ball->rect.w / 2;
-    ball->rect.y = MIDDLE_OF_FIELD_Y - ball->rect.h / 2; 
-    ball->velocityX = 0;
-    ball->velocityY = 0;
-    ball->collided = false;
+    pBall->rect.w = 32;
+    pBall->rect.h = 32;
+    pBall->rect.x = WINDOW_WIDTH / 2 - pBall->rect.w / 2;
+    pBall->rect.y = MIDDLE_OF_FIELD_Y - pBall->rect.h / 2; 
+    pBall->velocityX = 0;
+    pBall->velocityY = 0;
+    pBall->collided = false;
 
-    return ball;
+    return pBall;
 }
 
-void updateBallPosition(Ball *ball) {
-    ball->rect.x += ball->velocityX / 60;
-    ball->rect.y += ball->velocityY / 60;
+void updateBallPosition(Ball *pBall) {
+    pBall->rect.x += pBall->velocityX / 60;
+    pBall->rect.y += pBall->velocityY / 60;
 }
 
-void destroyBall(Ball *ball) {
-    if (ball->texture) SDL_DestroyTexture(ball->texture);
-    free(ball);
+void destroyBall(Ball *pBall) {
+    if (pBall->texture) SDL_DestroyTexture(pBall->texture);
+    free(pBall);
 }
 
-SDL_Texture *getBallTexture(Ball *ball) {
-    return ball->texture;
+SDL_Texture *getBallTexture(Ball *pBall) {
+    return pBall->texture;
 }
 
-SDL_Rect getBallRect(Ball *ball) {
-    return ball->rect;
+SDL_Rect getBallRect(Ball *pBall) {
+    return pBall->rect;
 }
 
-void setBallVelocity(Ball *ball, float velocityX, float velocityY) {
-    ball->velocityX = velocityX;
-    ball->velocityY = velocityY;
+void setBallVelocity(Ball *pBall, float velocityX, float velocityY) {
+    pBall->velocityX = velocityX;
+    pBall->velocityY = velocityY;
 }
 
-void setBallX(Ball *ball, int x) {
-    ball->rect.x = x;
+void setBallX(Ball *pBall, int x) {
+    pBall->rect.x = x;
 }
 
-void setBallY(Ball *ball, int y) {
-    ball->rect.y = y;
+void setBallY(Ball *pBall, int y) {
+    pBall->rect.y = y;
 }
 
 
@@ -149,3 +152,18 @@ bool goal(Ball *pBall) {
     return false;
 }
 
+/*void getBallSendData(Ball *pRocket, BallData *pBallData){
+    pBallData->velocityX = pBall->velocityX;
+    pBallData->velocityY = pBall->velocityY;
+    pBallData->x = pBall->x;
+    pBallData->y = pBall->y;
+    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+}
+
+void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
+    pBall->velocityX = pBallData->velocityX;
+    pBall->velocityY = pBallData->velocityY; 
+    pBall->x = pBallData->x;
+    pBall->y = pBallData->y;
+    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
+}*/

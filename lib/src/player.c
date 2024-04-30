@@ -1,6 +1,8 @@
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <SDL_image.h>
-#include "../include/player.h"
+#include "player.h"
+#include "player_data.h"
+#include "ball.h"
 #include <stdlib.h>
 #include <stdio.h>
 #define BALL_WINDOW_X1 64 //distance from left of window to left of field
@@ -22,8 +24,11 @@ struct player {
     float playerVelocityX;
     float playerVelocityY;
     int xPos, yPos;
+    Ball *pBall;
     SDL_Texture *playerTexture;
     SDL_Rect playerRect;
+    //SDL_Renderer *pGameRenderer; maybe add
+
 };
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex) {
@@ -36,8 +41,8 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     pPlayer->playerRect.h = 64;
     resetPlayerPos(pPlayer, playerIndex, w, h);
 
-    char imagePath[22];
-    snprintf(imagePath, sizeof(imagePath), "resources/player%d.png", playerIndex+1);
+    char imagePath[29];
+    snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
@@ -152,3 +157,19 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
 }
+
+/*void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
+    pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
+    pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
+    pPlayerData->yPos = pPlayer->yPos;
+    pPlayerData->xPos = pPlayer->xPos;
+    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+}
+
+void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
+    pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
+    pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
+    pPlayerData->yPos = pPlayer->yPos;
+    pPlayerData->xPos = pPlayer->xPos;
+    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
+}*/
