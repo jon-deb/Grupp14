@@ -35,21 +35,24 @@ typedef struct game {
     int nrOfPlayers, playerNr;
     GameState state;
     UDPsocket pSocket;
-	IPaddress serverAddress;
-	UDPpacket *pPacket;
+    IPaddress serverAddress;
+    UDPpacket *pPacket;
 } Game;
 
 int initiate(Game *pGame);
-void run(Game *pGame);
-void renderGame(Game *pGame);
+void run(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime);
+void renderGame(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 void updateWithServerData(Game *pGame);
 void closeGame(Game *pGame);
+Uint32 decreaseMatchTime(Uint32 interval, void *param); 
 
 int main(int argc, char** argv) {
     Game g = {0};
+    bool matchStarted = false; // Add matchStarted variable
+    Uint32 matchTime = 300000; // Add matchTime variable
     if (!initiate(&g)) return 1;
-    run(&g);
+    run(&g, &matchStarted, &matchTime); // Pass matchStarted and matchTime variables
     closeGame(&g);
     return 0;
 }
@@ -66,11 +69,11 @@ int initiate(Game *pGame) {
         return 0;
     }
     if (SDLNet_Init()) {
-		printf("SDLNet_Init: %s\n", SDLNet_GetError());
+        printf("SDLNet_Init: %s\n", SDLNet_GetError());
         TTF_Quit();
         SDL_Quit();
-		return 0;
-	}
+        return 0;
+    }
     pGame->pWindow = SDL_CreateWindow("client", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
@@ -93,17 +96,17 @@ int initiate(Game *pGame) {
     }
 
     if (!(pGame->pSocket = SDLNet_UDP_Open(0))) {//0 means not a server
-		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-		return 0;
-	}
-	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
-		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
-		return 0;
-	}
+        printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+        return 0;
+    }
+    if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
+        printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
+        return 0;
+    }
     if (!(pGame->pPacket = SDLNet_AllocPacket(512))) {
-		printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-		return 0;
-	}
+        printf("SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+        return 0;
+    }
     pGame->pPacket->address.host = pGame->serverAddress.host;
     pGame->pPacket->address.port = pGame->serverAddress.port;
 
@@ -120,15 +123,6 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;    
     }
-
-    /*for (int i = 0; i < pGame->nrOfPlayers; i++) {
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
-        if (!pGame->pPlayer[i]) {
-            fprintf(stderr, "Failed to initialize player %d\n", i + 1);
-
-            return 0;
-        }
-    }*/
 
     for (int i = 0; i < MAX_PLAYERS; i++) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
@@ -149,7 +143,7 @@ int initiate(Game *pGame) {
     pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
+    pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont," ",790,63);
     pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
     if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText || !pGame->pWaitingText || !pGame->pOverText){
         printf("Error: %s\n",SDL_GetError());
@@ -157,19 +151,11 @@ int initiate(Game *pGame) {
         return 0;
     }
 
-    for(int i=0;i<MAX_PLAYERS;i++){
-        if(!pGame->pPlayer[i]){
-            printf("Error: %s\n",SDL_GetError());
-            closeGame(pGame);
-            return 0;
-        }
-    }
-
     pGame->state = START;
     return 1;
 }
 
-void run(Game *pGame) {
+void run(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
     int close_requested = 0;
     SDL_Event event;
     ClientData cData;
@@ -177,6 +163,9 @@ void run(Game *pGame) {
     Uint32 lastTick = SDL_GetTicks();
     Uint32 currentTick;
     float deltaTime;
+
+    // Pass the matchTime variable as parameter to decreaseMatchTime function
+    SDL_TimerID timerID = SDL_AddTimer(1000, decreaseMatchTime, pMatchTime);
 
     int joining = 0;
     while (!close_requested) {
@@ -193,6 +182,7 @@ void run(Game *pGame) {
                 while (SDL_PollEvent(&event)) {
                     if(event.type == SDL_QUIT) close_requested = 1;
                     else handleInput(pGame, &event);
+                    *pMatchStarted = true;
                 }
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
@@ -210,8 +200,12 @@ void run(Game *pGame) {
                     for(int i = 0; i < pGame->nrOfPlayers; i++)
                         setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
                 }
-                renderGame(pGame);
+                renderGame(pGame, pMatchStarted, pMatchTime);
 
+                if (*pMatchStarted && *pMatchTime == 0) {
+                    *pMatchStarted = false;
+                    pGame->state = GAME_OVER;
+                }
                 break;
             case GAME_OVER:
                 drawText(pGame->pOverText);
@@ -232,7 +226,7 @@ void run(Game *pGame) {
                         cData.command=READY;
                         cData.clientNumber=-1;
                         memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
-		                pGame->pPacket->len = sizeof(ClientData);
+                        pGame->pPacket->len = sizeof(ClientData);
                     }
                 }
                 if(joining) SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
@@ -242,13 +236,25 @@ void run(Game *pGame) {
                 }                
                 break;
         }
-                //SDL_Delay(1000/60-15);//might work when you run on different processors
     }
+    SDL_RemoveTimer(timerID);
 }
 
-void renderGame(Game *pGame) {
+void renderGame(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
     SDL_RenderClear(pGame->pRenderer);
     SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
+
+    if (*pMatchStarted) {
+        int minutes = *pMatchTime / 60000;
+        int seconds = (*pMatchTime % 60000) / 1000;
+
+        char timeString[10];
+        sprintf(timeString, "%02d:%02d", minutes, seconds);
+
+        Text *pMatchTimerText = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, timeString, 790, 63);
+        drawText(pMatchTimerText);
+        destroyText(pMatchTimerText);
+    }
 
     drawText(pGame->pClockText);
     drawText(pGame->pScoreText);
@@ -356,4 +362,15 @@ void closeGame(Game *pGame) {
     SDLNet_Quit();
     TTF_Quit();
     SDL_Quit();
+}
+
+
+Uint32 decreaseMatchTime(Uint32 interval, void *param) {
+    Uint32 *pMatchTime = (Uint32 *)param;
+    if (*pMatchTime > interval) {
+        *pMatchTime -= interval;
+    } else {
+        *pMatchTime = 0;
+    }
+    return interval;
 }
