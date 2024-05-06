@@ -374,3 +374,4 @@ void closeGame(Game *pGame) {
     TTF_Quit();
     SDL_Quit();
 }
+#test
