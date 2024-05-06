@@ -112,8 +112,27 @@ int initiate(Game *pGame){
         return 0;
 	}
 
-    for(int i=0;i<MAX_PLAYERS;i++)
+    pGame->pBackgroundSurface = IMG_Load("../lib/resources/field_v.3.png");
+    if (!pGame->pBackgroundSurface) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame);
+        return 0;    
+    }
+    pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pGame->pBackgroundSurface);
+    SDL_FreeSurface(pGame->pBackgroundSurface);
+    if (!pGame->backgroundTexture) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame);
+        return 0;    
+    }
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
+        if (!pGame->pPlayer[i]) {
+            fprintf(stderr, "Failed to initialize player %d\n", i + 1);
+            return 0;
+        }
+    }
     pGame->nrOfPlayers = MAX_PLAYERS;
 
     pGame->pBall = createBall(pGame->pRenderer);
@@ -131,8 +150,17 @@ int initiate(Game *pGame){
     }
     spawnPowerCube(pGame->pPower);
 
-    pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for clients",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
+    pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
+
+    if(!pGame->pOverText || !pGame->pStartText || !pGame->pClockText || !pGame->pScoreText){
+        printf("Error: %s\n",SDL_GetError());
+        closeGame(pGame);
+        return 0;
+    }
+
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
             printf("Error: %s\n",SDL_GetError());
@@ -140,11 +168,7 @@ int initiate(Game *pGame){
             return 0;
         }
     }
-    if(!pGame->pOverText || !pGame->pStartText){
-        printf("Error: %s\n",SDL_GetError());
-        closeGame(pGame);
-        return 0;
-    }
+
     pGame->state = START;
     pGame->nrOfClients = 0;
 
@@ -232,52 +256,8 @@ void renderGame(Game *pGame) {
     SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
     renderPowerCube(pGame->pPower, pGame->pRenderer);
     SDL_RenderPresent(pGame->pRenderer);
-    SDL_Delay(1000/60); 
-    //handleCollisionsAndPhysics(pGame);
+    SDL_Delay(1000/60);
 }
-
-/*void handleCollisionsAndPhysics(Game *pGame) {
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        Player *currentPlayer = pGame->pPlayer[i];
-        SDL_Rect playerRect = getPlayerRect(currentPlayer);
-        SDL_Rect ballRect = getBallRect(pGame->pBall);
-    
-        if(checkCollision(playerRect, ballRect)) {
-            // räknar mittpunkten för spelare och bollen
-            float playerCenterX = playerRect.x + playerRect.w / 2;
-            float playerCenterY = playerRect.y + playerRect.h / 2;
-            float ballCenterX = ballRect.x + ballRect.w / 2;
-            float ballCenterY = ballRect.y + ballRect.h / 2;
-
-            // beräknar vektorn
-            float collisionVectorX = ballCenterX - playerCenterX;
-            float collisionVectorY = ballCenterY - playerCenterY;
-            
-            // räknar distansen
-            float distance = sqrt(collisionVectorX * collisionVectorX + collisionVectorY * collisionVectorY);
-
-            // normaliserar vektorn
-            float normalX = collisionVectorX / distance;
-            float normalY = collisionVectorY / distance;
-
-            // update på hastigheten efter collision
-            setBallVelocity(pGame->pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
-        }
-    }
-    applyFriction(pGame->pBall);
-    updateBallPosition(pGame->pBall);
-    if (!goal(pGame->pBall))
-    {
-        restrictBallWithinWindow(pGame->pBall);
-    }
-    else
-    {
-        for (int i = 0; i < pGame->nrOfPlayers; i++)
-        {
-            resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-        }
-    }
-}*/
 
 void setUpGame(Game *pGame){
     for(int i=0;i<MAX_PLAYERS;i++) resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -288,7 +268,7 @@ void setUpGame(Game *pGame){
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
     for(int i=0;i<MAX_PLAYERS;i++){
-        //getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
+        getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
     }
     for(int i=0;i<MAX_PLAYERS;i++){
         pGame->sData.clientNr = i;
