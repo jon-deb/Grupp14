@@ -21,6 +21,7 @@ int getPlayerSpeedY(Player *pPlayer);
 int getPlayerSpeedX(Player *pPlayer);
 void restrictPlayerWithinWindow(Player *pPlayer, int w, int h);
 void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h);
+void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2);
 //void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData);
 //void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData);
 

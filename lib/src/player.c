@@ -197,3 +197,35 @@ void destroyPlayer(Player *pPlayer) {
         free(pPlayer);
     }
 }
+
+void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2) {
+    SDL_Rect rect1 = getPlayerRect(pPlayer1);
+    SDL_Rect rect2 = getPlayerRect(pPlayer2);
+
+    if (checkCollision(rect1, rect2)) {
+        // Calculate overlap in both dimensions
+        int overlapX = (rect1.x < rect2.x) ? (rect1.x + rect1.w - rect2.x) : (rect2.x + rect2.w - rect1.x);
+        int overlapY = (rect1.y < rect2.y) ? (rect1.y + rect1.h - rect2.y) : (rect2.y + rect2.h - rect1.y);
+
+        // Resolve collision based on the lesser overlap
+        if (overlapX < overlapY) {
+            int shift = overlapX / 2 + 1;  // Added +1 for anti-sticking
+            if (rect1.x < rect2.x) {
+                setPlayerPosition(pPlayer1, rect1.x - shift, rect1.y);
+                setPlayerPosition(pPlayer2, rect2.x + shift, rect2.y);
+            } else {
+                setPlayerPosition(pPlayer1, rect1.x + shift, rect1.y);
+                setPlayerPosition(pPlayer2, rect2.x - shift, rect2.y);
+            }
+        } else {
+            int shift = overlapY / 2 + 1;  // Added +1 for anti-sticking
+            if (rect1.y < rect2.y) {
+                setPlayerPosition(pPlayer1, rect1.x, rect1.y - shift);
+                setPlayerPosition(pPlayer2, rect2.x, rect2.y + shift);
+            } else {
+                setPlayerPosition(pPlayer1, rect1.x, rect1.y + shift);
+                setPlayerPosition(pPlayer2, rect2.x, rect2.y - shift);
+            }
+        }
+    }
+}
