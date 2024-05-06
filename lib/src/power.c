@@ -4,6 +4,7 @@
 #include <time.h>
 #include "player_data.h"
 #include "power.h"
+#include "ball.h"
 #include <SDL_image.h>
 
 #define POWER_WINDOW_X1 64 //distance from left of window to left of field
@@ -12,13 +13,13 @@
 #define POWER_WINDOW_Y2 765 //distance from top of window to bottom of field
 
 
-typedef struct power {
+struct power {
     SDL_Texture *texture;
     SDL_Rect rect;
     SDL_Surface *surface;
     bool visible;
     SDL_TimerID restartTimerID;
-} Power;
+};
 
 Power *createPower(SDL_Renderer *renderer) {
     Power *pPower = malloc(sizeof(Power));
@@ -63,29 +64,26 @@ void spawnPowerCube(Power *power) {
     }
 }
 
-void handlePowerCubeCollision(Power *power, SDL_Rect playerRect) {
-    if (power->visible && checkPowerCollision(playerRect, power->rect)) {
-        power->visible = false;
-
-        if (power->restartTimerID != 0) {
-            SDL_RemoveTimer(power->restartTimerID);
-        }
-        power->restartTimerID = SDL_AddTimer(10000, respawnPowerCubeCallback, power); // Respawn after 10 seconds
-    }
-}
-
 Uint32 respawnPowerCubeCallback(Uint32 interval, void *param) {
     Power *power = (Power *)param;
-    if (power) {
-        spawnPowerCube(power);
-    }
+    if (power) spawnPowerCube(power);
     return 0;
 }
 
 void renderPowerCube(Power *power, SDL_Renderer *renderer) {
-    if (power && power->visible) {
-        SDL_RenderCopy(renderer, power->texture, NULL, &power->rect);
+    if (power->visible) SDL_RenderCopy(renderer, power->texture, NULL, &power->rect);
+}
+
+int handlePowerCubeCollision(Power *power, SDL_Rect playerRect) {
+    int collided = 0;
+    if (power->visible && checkCollision(playerRect, power->rect)) {
+
+        power->visible = false;
+
+        if(power->restartTimerID) SDL_RemoveTimer(power->restartTimerID);
+        power->restartTimerID = SDL_AddTimer(10000, respawnPowerCubeCallback, power); // Respawn after 10 seconds
     }
+
 }
 
 void updatePowerCube(Power *power, SDL_Renderer *renderer, SDL_Rect playerRect) {
@@ -99,14 +97,6 @@ SDL_Texture *getPowerTexture(Power *pPower) {
 
 SDL_Rect getPowerRect(Power *pPower) {
     return pPower->rect;
-}
-
-int checkPowerCollision(SDL_Rect rect1, SDL_Rect rect2) {
-    if (rect1.y + rect1.h <= rect2.y) return 0; // Bottom is above top
-    if (rect1.y >= rect2.y + rect2.h) return 0; // Top is below bottom
-    if (rect1.x + rect1.w <= rect2.x) return 0; // Right is left of left
-    if (rect1.x >= rect2.x + rect2.w) return 0; // Left is right of right
-    return 1;
 }
 
 void destroyPowerCube(Power *power) {

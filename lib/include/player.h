@@ -19,6 +19,7 @@ void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h);
 void resetPlayerSpeed(Player *pPlayer, int x, int y);
 int getPlayerSpeedY(Player *pPlayer);
 int getPlayerSpeedX(Player *pPlayer);
+void assignPowerUp(int powerUpValue, Player *pPlayer);
 void restrictPlayerWithinWindow(Player *pPlayer, int w, int h);
 void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h);
 void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2);

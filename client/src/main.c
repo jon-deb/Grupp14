@@ -12,7 +12,7 @@
 #include "ball.h"
 #include "player_data.h"
 #include "player.h"
-#include "power.h"
+#include "../../lib/include/power.h"
 #include "text.h"
 
 #define WINDOW_WIDTH 1300
@@ -220,6 +220,10 @@ void run(Game *pGame) {
                     SDL_Rect ballRect = getBallRect(pGame->pBall);
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                     updatePowerCube(pGame->pPower, pGame->pRenderer, getPlayerRect(pGame->pPlayer[i])); // Example for one player
+                    if(checkCollision(getPlayerRect(pGame->pPlayer[i]), getPowerRect(pGame->pPower))) {
+                        int powerUpValue = rand()%NR_OF_POWERUPS;
+                        assignPowerUp(powerUpValue, pGame->pPlayer[i]);
+                    }
                 }
                 if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
                 else {
@@ -374,4 +378,3 @@ void closeGame(Game *pGame) {
     TTF_Quit();
     SDL_Quit();
 }
-#test
