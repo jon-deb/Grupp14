@@ -9,7 +9,7 @@ typedef struct power Power;
 Power *createPower(SDL_Renderer *renderer);
 void spawnPowerCube(Power *power);
 Uint32 respawnPowerCubeCallback(Uint32 interval, void *param);
-void handlePowerCubeCollision(Power *power, SDL_Rect playerRect, SDL_Rect powerRect);
+void handlePowerCubeCollision(Power *power, SDL_Rect playerRect);
 void renderPowerCube(Power *power, SDL_Renderer *renderer);
 void updatePowerCube(Power *power, SDL_Renderer *renderer, SDL_Rect playerRect);
 SDL_Texture *getPowerTexture(Power *power);

@@ -17,6 +17,7 @@ typedef struct power {
     SDL_Rect rect;
     SDL_Surface *surface;
     bool visible;
+    SDL_TimerID restartTimerID;
 } Power;
 
 Power *createPower(SDL_Renderer *renderer) {
@@ -42,8 +43,8 @@ Power *createPower(SDL_Renderer *renderer) {
     }
 
     srand(time(NULL));
-    pPower->rect.w = 32;
-    pPower->rect.h = 32;
+    pPower->rect.w = 48;
+    pPower->rect.h = 48;
     pPower->visible = false;
 
     return pPower;
@@ -52,15 +53,24 @@ Power *createPower(SDL_Renderer *renderer) {
 void spawnPowerCube(Power *power) {
     if (!power) return;
 
-    power->rect.x += POWER_WINDOW_X1 + rand() % (POWER_WINDOW_X2 - power->rect.w);
-    power->rect.y += POWER_WINDOW_Y1 + rand() % (POWER_WINDOW_Y2 - power->rect.h);
+    power->rect.x = POWER_WINDOW_X1 + rand() % (POWER_WINDOW_X2 - POWER_WINDOW_X1 - power->rect.w);
+    power->rect.y = POWER_WINDOW_Y1 + rand() % (POWER_WINDOW_Y2 - POWER_WINDOW_Y1 - power->rect.h);
     power->visible = true;
+
+    if (power->restartTimerID != 0) {
+        SDL_RemoveTimer(power->restartTimerID);
+        power->restartTimerID = 0;
+    }
 }
 
-void handlePowerCubeCollision(Power *power, SDL_Rect playerRect, SDL_Rect powerRect) {
-    if (power->visible && checkPowerCollision(playerRect, powerRect)) {
-        power->visible = false; // Hide the power cube on collision
-        SDL_AddTimer(10000, respawnPowerCubeCallback, power); // Respawn after 10 seconds
+void handlePowerCubeCollision(Power *power, SDL_Rect playerRect) {
+    if (power->visible && checkPowerCollision(playerRect, power->rect)) {
+        power->visible = false;
+
+        if (power->restartTimerID != 0) {
+            SDL_RemoveTimer(power->restartTimerID);
+        }
+        power->restartTimerID = SDL_AddTimer(10000, respawnPowerCubeCallback, power); // Respawn after 10 seconds
     }
 }
 
@@ -69,7 +79,7 @@ Uint32 respawnPowerCubeCallback(Uint32 interval, void *param) {
     if (power) {
         spawnPowerCube(power);
     }
-    return 0; // Stop the timer
+    return 0;
 }
 
 void renderPowerCube(Power *power, SDL_Renderer *renderer) {
@@ -79,7 +89,7 @@ void renderPowerCube(Power *power, SDL_Renderer *renderer) {
 }
 
 void updatePowerCube(Power *power, SDL_Renderer *renderer, SDL_Rect playerRect) {
-    handlePowerCubeCollision(power, playerRect, power->rect);
+    handlePowerCubeCollision(power, playerRect);
     renderPowerCube(power, renderer);
 }
 
