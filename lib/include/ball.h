@@ -21,5 +21,6 @@ int checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 bool goal(Ball *pBall);
 void getBallSendData(Ball *pBall, BallData *pBallData);
 void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);
-
+bool isRightGoalScored(Ball *pBall);
+bool isLeftGoalScored(Ball *pBall);
 #endif /* ball_h */

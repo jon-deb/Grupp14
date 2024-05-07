@@ -183,3 +183,29 @@ void destroyBall(Ball *pBall) {
     if (pBall->texture) SDL_DestroyTexture(pBall->texture);
     free(pBall);
 }
+
+bool isLeftGoalScored(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    if (ballRect.x < 0 && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return true;
+    }
+    return false;
+}
+
+
+bool isRightGoalScored(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    if (ballRect.x + ballRect.w > WINDOW_WIDTH && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return true;
+    }
+    return false;
+}
