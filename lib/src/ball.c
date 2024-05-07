@@ -155,6 +155,7 @@ int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
 bool goal(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        //if ball.x < middle of fiel (around 650) then player 2 scored, else player 1 scored
         setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
         setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
         pBall->velocityX = 0;
