@@ -33,6 +33,8 @@ typedef struct game {
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     int nrOfPlayers, playerNr;
+    int teamA;
+    int teamB;
     GameState state;
     UDPsocket pSocket;
     IPaddress serverAddress;
@@ -140,11 +142,14 @@ int initiate(Game *pGame) {
         return 0;
     }
 
+    pGame->teamA = 0;
+    pGame->teamB = 0;
+
     pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont," ",790,63);
-    pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
+    pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont," ",510,63);
     if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText || !pGame->pWaitingText || !pGame->pOverText){
         printf("Error: %s\n",SDL_GetError());
         closeGame(pGame);
@@ -196,10 +201,6 @@ void run(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                 }
                 if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
-                else {
-                    for(int i = 0; i < pGame->nrOfPlayers; i++)
-                        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-                }
                 renderGame(pGame, pMatchStarted, pMatchTime);
 
                 if (*pMatchStarted && *pMatchTime == 0) {
@@ -236,9 +237,21 @@ void run(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
                 }                
                 break;
         }
+        
+        
+        if (pGame->state == ONGOING && isLeftGoalScored(pGame->pBall)) {
+            pGame->teamB++;
+            for(int i = 0; i < pGame->nrOfPlayers; i++)
+                setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+        } else if (pGame->state == ONGOING && isRightGoalScored(pGame->pBall)) {
+            pGame->teamA++;
+            for(int i = 0; i < pGame->nrOfPlayers; i++)
+                setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+        }
     }
     SDL_RemoveTimer(timerID);
 }
+
 
 void renderGame(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
     SDL_RenderClear(pGame->pRenderer);
@@ -254,6 +267,18 @@ void renderGame(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
         Text *pMatchTimerText = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, timeString, 790, 63);
         drawText(pMatchTimerText);
         destroyText(pMatchTimerText);
+
+    char goalsStringTeamA[5]; // Använd en tillräckligt stor buffert för att rymma alla möjliga mål
+    snprintf(goalsStringTeamA, sizeof(goalsStringTeamA), "%d:", pGame->teamA);
+    Text *pGoalsTextTeamA = createText(pGame->pRenderer, 227,220,198,pGame->pScoreboardFont, goalsStringTeamA, 510,63);
+    drawText(pGoalsTextTeamA);
+    destroyText(pGoalsTextTeamA);
+
+    char goalsStringTeamB[5]; 
+    snprintf(goalsStringTeamB, sizeof(goalsStringTeamB), "%d", pGame->teamB);
+    Text *pGoalsTextTeamB = createText(pGame->pRenderer, 227,220,198,pGame->pScoreboardFont, goalsStringTeamB,550,63);
+    drawText(pGoalsTextTeamB);
+    destroyText(pGoalsTextTeamB);
     }
 
     drawText(pGame->pClockText);

@@ -19,6 +19,9 @@ void restrictBallWithinWindow(Ball *pBall);
 void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall);
 int checkCollision(SDL_Rect rect1, SDL_Rect rect2);
 bool goal(Ball *pBall);
+bool isLeftGoalScored(Ball *pBall);
+bool isRightGoalScored(Ball *pBall);
+
 //void getBallSendData(Ball *pBall, BallData *pBallData);
 //void updateBallWithRecievedData(Ball *pBall, BallData *pBallData);
 
