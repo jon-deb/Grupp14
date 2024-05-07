@@ -99,12 +99,18 @@ void applyFriction(Ball *pBall) {
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if (ballRect.x < BALL_WINDOW_X1) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, 0);
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+            
+            setBallX(pBall, 0);
+        }
         else setBallX(pBall, BALL_WINDOW_X1);
         pBall->velocityX = -pBall->velocityX;
     } 
     if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, WINDOW_WIDTH);
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM){
+            
+            setBallX(pBall, WINDOW_WIDTH);
+        } 
         else setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
         pBall->velocityX = -pBall->velocityX;
     }
