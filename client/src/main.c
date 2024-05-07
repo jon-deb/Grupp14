@@ -40,16 +40,12 @@ typedef struct game {
     IPaddress serverAddress;
     UDPpacket *pPacket;
     Uint32 matchTime; // Timer
+    bool matchStarted; 
 } Game;
 
-typedef struct gameParams {
-    Game *pGame;
-    bool *pMatchStarted;
-} GameParams;
-
 int initiate(Game *pGame);
-void run(Game *pGame, bool *pMatchStarted);
-void renderGame(Game *pGame); // Ändrat parametern till Game istället för GameParams
+void run(Game *pGame);
+void renderGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 void updateWithServerData(Game *pGame);
 void closeGame(Game *pGame);
@@ -57,9 +53,8 @@ Uint32 decreaseMatchTime(Uint32 interval, void *param);
 
 int main(int argc, char** argv) {
     Game g = {0};
-    bool matchStarted = false; // Add matchStarted variable
     if (!initiate(&g)) return 1;
-    run(&g, &matchStarted); // Pass matchStarted variable
+    run(&g);
     closeGame(&g);
     return 0;
 }
@@ -162,12 +157,13 @@ int initiate(Game *pGame) {
     }
 
     pGame->state = START;
-    pGame->matchTime = 300000; // Initialize match time
+    pGame->matchTime = 300000; 
+    pGame->matchStarted = false; 
 
     return 1;
 }
 
-void run(Game *pGame, bool *pMatchStarted) {
+void run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
     ClientData cData;
@@ -176,7 +172,7 @@ void run(Game *pGame, bool *pMatchStarted) {
     Uint32 currentTick;
     float deltaTime;
 
-    // Pass the GameParams structure as a parameter to decreaseMatchTime function
+    
     SDL_TimerID timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
 
     int joining = 0;
@@ -207,7 +203,7 @@ void run(Game *pGame, bool *pMatchStarted) {
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                 }
                 if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
-                renderGame(pGame); // Ändrat parametern till att vara en Game-struktur istället för en GameParams-struktur
+                renderGame(pGame);
                 break;
             case GAME_OVER:
                 drawText(pGame->pOverText);
@@ -220,7 +216,7 @@ void run(Game *pGame, bool *pMatchStarted) {
                     SDL_RenderClear(pGame->pRenderer);
                     drawText(pGame->pWaitingText);
                 }
-                *pMatchStarted = true;
+                pGame->matchStarted = true; 
                 SDL_RenderPresent(pGame->pRenderer);
                 if(SDL_PollEvent(&event)){
                     if(event.type==SDL_QUIT) close_requested = 1;
@@ -253,7 +249,6 @@ void run(Game *pGame, bool *pMatchStarted) {
     }
     SDL_RemoveTimer(timerID);
 }
-
 
 void renderGame(Game *pGame) {
     SDL_RenderClear(pGame->pRenderer);
@@ -297,7 +292,6 @@ void renderGame(Game *pGame) {
     SDL_RenderPresent(pGame->pRenderer);
     SDL_Delay(1000 / 60); 
 }
-
 
 void updateWithServerData(Game *pGame){
     ServerData sData;
