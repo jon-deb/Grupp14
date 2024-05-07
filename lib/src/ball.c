@@ -99,12 +99,18 @@ void applyFriction(Ball *pBall) {
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if (ballRect.x < BALL_WINDOW_X1) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, 0);
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+            
+            setBallX(pBall, 0);
+        }
         else setBallX(pBall, BALL_WINDOW_X1);
         pBall->velocityX = -pBall->velocityX;
     } 
     if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, WINDOW_WIDTH);
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM){
+            
+            setBallX(pBall, WINDOW_WIDTH);
+        } 
         else setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
         pBall->velocityX = -pBall->velocityX;
     }
@@ -149,6 +155,7 @@ int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
 bool goal(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        //if ball.x < middle of fiel (around 650) then player 2 scored, else player 1 scored
         setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
         setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
         pBall->velocityX = 0;

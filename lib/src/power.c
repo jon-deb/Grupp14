@@ -42,7 +42,7 @@ Power *createPower(SDL_Renderer *renderer) {
         return NULL;
     }
 
-    srand(time(NULL));
+    srand(500);
     pPower->rect.w = 48;
     pPower->rect.h = 48;
     pPower->visible = false;
