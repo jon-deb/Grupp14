@@ -163,9 +163,6 @@ void getBallSendData(Ball *pBall, BallData *pBallData){
     pBallData->velocityY = pBall->velocityY;
     pBallData->x = pBall->rect.x;
     pBallData->y = pBall->rect.y;
-
-    //pBall->rect.x += pBall->velocityX / 60;
-    //pBall->rect.y += pBall->velocityY / 60;
 }
 
 void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
