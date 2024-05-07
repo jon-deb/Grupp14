@@ -182,7 +182,6 @@ void run(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
                 while (SDL_PollEvent(&event)) {
                     if(event.type == SDL_QUIT) close_requested = 1;
                     else handleInput(pGame, &event);
-                    *pMatchStarted = true;
                 }
                 for (int i = 0; i < MAX_PLAYERS; i++)
                 {
@@ -218,6 +217,7 @@ void run(Game *pGame, bool *pMatchStarted, Uint32 *pMatchTime) {
                     SDL_RenderClear(pGame->pRenderer);
                     drawText(pGame->pWaitingText);
                 }
+                *pMatchStarted = true;
                 SDL_RenderPresent(pGame->pRenderer);
                 if(SDL_PollEvent(&event)){
                     if(event.type==SDL_QUIT) close_requested = 1;
