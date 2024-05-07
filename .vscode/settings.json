@@ -2,6 +2,7 @@
   "files.associations": {
     "player_data.h": "c",
     "stdbool.h": "c",
-    "ball.h": "c"
+    "ball.h": "c",
+    "stdlib.h": "c"
   }
 }
