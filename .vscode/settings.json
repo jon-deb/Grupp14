@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "player_data.h": "c",
+    "stdbool.h": "c",
+    "ball.h": "c"
+  }
+}

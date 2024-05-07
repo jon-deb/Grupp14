@@ -24,11 +24,11 @@ typedef struct ballData{
 typedef struct playerData{
     float playerVelocityX, playerVelocityY;
     int xPos, yPos;
-    BallData bData;
 } PlayerData;   
 
 typedef struct serverData{
     PlayerData players[MAX_PLAYERS];
+    BallData ball;
     int clientNr;
     GameState gState;
 } ServerData;

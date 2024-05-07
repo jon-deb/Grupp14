@@ -19,8 +19,7 @@
 #define MOVEMENT_SPEED 400
 
 struct player {
-    float playerVelocityX;
-    float playerVelocityY;
+    float playerVelocityX, playerVelocityY;
     int xPos, yPos;
     Ball *pBall;
     SDL_Texture *playerTexture;
@@ -175,17 +174,15 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
 void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
     pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
-    pPlayerData->yPos = pPlayer->yPos;
-    pPlayerData->xPos = pPlayer->xPos;
-    //getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+    pPlayerData->yPos = pPlayer->playerRect.y;
+    pPlayerData->xPos = pPlayer->playerRect.x;
 }
 
 void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
-    pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
-    pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
-    pPlayerData->yPos = pPlayer->yPos;
-    pPlayerData->xPos = pPlayer->xPos;
-    //updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
+    pPlayer->playerVelocityX = pPlayerData->playerVelocityX;
+    pPlayer->playerVelocityY = pPlayerData->playerVelocityY;
+    pPlayer->playerRect.y = pPlayerData->yPos;
+    pPlayer->playerRect.x = pPlayerData->xPos;
 }
 
 void destroyPlayer(Player *pPlayer) {
