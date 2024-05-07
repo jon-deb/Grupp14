@@ -1,6 +1,6 @@
 #include <SDL.h>
 #include "player_data.h"
-#include "Ball.h"
+#include "ball.h"
 #include <SDL_image.h>
 #include <stdbool.h>
 
@@ -22,8 +22,7 @@ typedef struct ball {
     SDL_Texture *texture;
     SDL_Rect rect;
     SDL_Surface *surface;
-    float velocityX;
-    float velocityY;
+    float velocityX, velocityY;
     bool collided;
 } Ball;
 
@@ -159,21 +158,22 @@ bool goal(Ball *pBall) {
     return false;
 }
 
-/*void getBallSendData(Ball *pRocket, BallData *pBallData){
+void getBallSendData(Ball *pBall, BallData *pBallData){
     pBallData->velocityX = pBall->velocityX;
     pBallData->velocityY = pBall->velocityY;
-    pBallData->x = pBall->x;
-    pBallData->y = pBall->y;
-    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+    pBallData->x = pBall->rect.x;
+    pBallData->y = pBall->rect.y;
+
+    //pBall->rect.x += pBall->velocityX / 60;
+    //pBall->rect.y += pBall->velocityY / 60;
 }
 
 void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
     pBall->velocityX = pBallData->velocityX;
     pBall->velocityY = pBallData->velocityY; 
-    pBall->x = pBallData->x;
-    pBall->y = pBallData->y;
-    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}*/
+    pBall->rect.x = pBallData->x;
+    pBall->rect.y = pBallData->y;
+}
 
 void destroyBall(Ball *pBall) {
     if (pBall->texture) SDL_DestroyTexture(pBall->texture);

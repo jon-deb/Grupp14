@@ -30,22 +30,28 @@ typedef struct game {
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
     TTF_Font *pFont, *pScoreboardFont;
+    
     Text *pStartText, *pClockText, *pScoreText, *pWaitingText, *pOverText;
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     Power *pPower;
-    int nrOfPlayers, playerNr;
     GameState state;
+
+    int nrOfPlayers, playerNr;
+
     UDPsocket pSocket;
 	IPaddress serverAddress;
 	UDPpacket *pPacket;
+
 } Game;
 
 int initiate(Game *pGame);
 void run(Game *pGame);
 void renderGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
+
 void updateWithServerData(Game *pGame);
+
 void closeGame(Game *pGame);
 
 int main(int argc, char** argv) {
@@ -123,15 +129,6 @@ int initiate(Game *pGame) {
         return 0;    
     }
 
-    /*for (int i = 0; i < pGame->nrOfPlayers; i++) {
-        pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
-        if (!pGame->pPlayer[i]) {
-            fprintf(stderr, "Failed to initialize player %d\n", i + 1);
-
-            return 0;
-        }
-    }*/
-
     for (int i = 0; i < MAX_PLAYERS; i++) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
@@ -157,8 +154,8 @@ int initiate(Game *pGame) {
     spawnPowerCube(pGame->pPower);
 
     pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
+    pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
     pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
     if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText || !pGame->pWaitingText || !pGame->pOverText){
@@ -189,26 +186,31 @@ void run(Game *pGame) {
     float deltaTime;
 
     int joining = 0;
-    while (!close_requested) {
-        switch(pGame->state) {
-            case ONGOING:                
-                while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
-                    updateWithServerData(pGame);
-                }
 
+    while (!close_requested) {
+        switch(pGame->state) 
+        {
+            case ONGOING:
                 currentTick = SDL_GetTicks();
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
 
-                while (SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT) close_requested = 1;
-                    else handleInput(pGame, &event);
+                while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
+                    updateWithServerData(pGame);
                 }
-                for (int i = 0; i < MAX_PLAYERS; i++)
+
+                while (SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) {
+                        close_requested = 1;
+                    } else {
+                        handleInput(pGame, &event);
+                    }
+                }
+
+                for (int i=0; i<MAX_PLAYERS; i++)
                 {
                     updatePlayerPosition(pGame->pPlayer[i], deltaTime);
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
-                    //updatePlayerPosition(pGame->pPlayer, deltaTime);
                 }
                 for (int i = 0; i < pGame->nrOfPlayers - 1; i++) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
@@ -221,7 +223,7 @@ void run(Game *pGame) {
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                     updatePowerCube(pGame->pPower, pGame->pRenderer, getPlayerRect(pGame->pPlayer[i])); // Example for one player
                 }
-                if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
+               if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
                 else {
                     for(int i = 0; i < pGame->nrOfPlayers; i++)
                         setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -289,8 +291,9 @@ void updateWithServerData(Game *pGame){
     pGame->playerNr = sData.clientNr;
     pGame->state = sData.gState;
     for(int i=0;i<MAX_PLAYERS;i++){
-        //updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
+        updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
     }
+    updateBallWithRecievedData(pGame->pBall,&(sData.ball));
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent) {
