@@ -183,12 +183,15 @@ void run(Game *pGame){
 
     Uint32 lastTick = SDL_GetTicks();
     Uint32 currentTick;
+
     float deltaTime;
+
 
     while(!close_requested){
         switch (pGame->state)
         {
             case ONGOING:
+
                 currentTick = SDL_GetTicks();
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
