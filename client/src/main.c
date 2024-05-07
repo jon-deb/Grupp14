@@ -42,6 +42,8 @@ typedef struct game {
     UDPsocket pSocket;
 	IPaddress serverAddress;
 	UDPpacket *pPacket;
+    Uint32 matchTime;
+    bool matchStarted; 
 
 } Game;
 
@@ -51,7 +53,7 @@ void renderGame(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 
 void updateWithServerData(Game *pGame);
-
+Uint32 decreaseMatchTime(Uint32 interval, void *param);
 void closeGame(Game *pGame);
 
 int main(int argc, char** argv) {
@@ -156,7 +158,7 @@ int initiate(Game *pGame) {
     pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"05:00",790,63);
+    pGame->pClockText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont," ",790,63);
     pGame->pScoreText = createText(pGame->pRenderer,227,220,198,pGame->pScoreboardFont,"0-0",510,63);
     if(!pGame->pStartText || !pGame->pClockText || !pGame->pScoreText || !pGame->pWaitingText || !pGame->pOverText){
         printf("Error: %s\n",SDL_GetError());
@@ -173,6 +175,7 @@ int initiate(Game *pGame) {
     }
 
     pGame->state = START;
+    pGame->matchTime = 300000;
     return 1;
 }
 
@@ -184,7 +187,7 @@ void run(Game *pGame) {
     Uint32 lastTick = SDL_GetTicks();
     Uint32 currentTick;
     float deltaTime;
-
+    SDL_TimerID timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
     int joining = 0;
 
     while (!close_requested) {
@@ -262,11 +265,19 @@ void run(Game *pGame) {
         }
                 //SDL_Delay(1000/60-15);//might work when you run on different processors
     }
+    SDL_RemoveTimer(timerID);
 }
 
 void renderGame(Game *pGame) {
     SDL_RenderClear(pGame->pRenderer);
     SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
+    int minutes = pGame->matchTime / 60000;
+    int seconds = (pGame->matchTime % 60000) / 1000;
+    char timeString[10];
+    sprintf(timeString, "%02d:%02d", minutes, seconds);
+    Text *pMatchTimerText = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, timeString, 790, 63);
+    drawText(pMatchTimerText);
+    destroyText(pMatchTimerText);
 
     drawText(pGame->pClockText);
     drawText(pGame->pScoreText);
@@ -352,6 +363,14 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
         restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
         cData.command = RESTRICT_PLAYER;
     }
+}
+
+Uint32 decreaseMatchTime(Uint32 interval, void *param) {
+    Uint32 *pMatchTime = (Uint32 *)param;
+    if (*pMatchTime > 0) {
+        *pMatchTime -= 1000;
+    }
+    return interval;
 }
 
 void closeGame(Game *pGame) {
