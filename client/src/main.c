@@ -29,9 +29,9 @@ typedef struct game {
     SDL_Renderer *pRenderer;
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
-    TTF_Font *pFont, *pScoreboardFont;
+    TTF_Font *pFont, *pScoreboardFont, *pLobbyFont;
     
-    Text *pStartText,*pWaitingText, *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB;
+    Text *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1, *pSpot2, *pSpot3, *pSpot4, *pLobbyText;
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     Power *pPower;
@@ -50,6 +50,7 @@ typedef struct game {
 int initiate(Game *pGame);
 void run(Game *pGame);
 void renderGame(Game *pGame);
+void renderLobby(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 
 void updateWithServerData(Game *pGame);
@@ -96,13 +97,6 @@ int initiate(Game *pGame) {
         return 0;    
     }
 
-    pGame->pFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 70);
-    pGame->pScoreboardFont = TTF_OpenFont("../lib/resources/ManaspaceRegular-ZJwZ.ttf", 50);
-    if(!pGame->pFont || !pGame->pScoreboardFont){
-        printf("Error: %s\n",TTF_GetError());
-        closeGame(pGame);
-        return 0;
-    }
 
     if (!(pGame->pSocket = SDLNet_UDP_Open(0))) {//0 means not a server
 		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
@@ -157,16 +151,17 @@ int initiate(Game *pGame) {
     }
     spawnPowerCube(pGame->pPower);
     
-    pGame->teamA = 0;
-    pGame->teamB = 0;
-    pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for server...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    if(!pGame->pStartText || !pGame->pWaitingText || !pGame->pOverText){
-        printf("Error: %s\n",SDL_GetError());
+    pGame->pFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 100);
+    pGame->pScoreboardFont = TTF_OpenFont("../lib/resources/ManaspaceRegular-ZJwZ.ttf", 50);
+    pGame->pLobbyFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 50);
+    if(!pGame->pFont || !pGame->pScoreboardFont || !pGame->pLobbyFont){
+        printf("Error: %s\n",TTF_GetError());
         closeGame(pGame);
         return 0;
     }
+
+    pGame->teamA = 0;
+    pGame->teamB = 0;
 
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
@@ -253,14 +248,7 @@ void run(Game *pGame) {
                 drawText(pGame->pOverText);
                 break;
             case START:
-                if (!joining)
-                {
-                    drawText(pGame->pStartText);
-                }else{
-                    SDL_RenderClear(pGame->pRenderer);
-                    drawText(pGame->pWaitingText);
-                }
-                SDL_RenderPresent(pGame->pRenderer);
+                renderLobby(pGame);
                 if(SDL_PollEvent(&event)){
                     if(event.type==SDL_QUIT) close_requested = 1;
                     else if(!joining && event.type==SDL_KEYDOWN && event.key.keysym.scancode==SDL_SCANCODE_SPACE){
@@ -281,6 +269,25 @@ void run(Game *pGame) {
                 //SDL_Delay(1000/60-15);//might work when you run on different processors
     }
     SDL_RemoveTimer(timerID);
+}
+
+void renderLobby(Game *pGame){
+    SDL_RenderClear(pGame->pRenderer);
+
+    pGame->pLobbyText = createText(pGame->pRenderer, 227, 220, 198, pGame->pFont, "Lobby", WINDOW_WIDTH/2, 150);
+    pGame->pHostSpotText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, "Host", WINDOW_WIDTH/2, 250);
+    pGame->pSpot1 = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, "1. Player 1", WINDOW_WIDTH/2, 325);
+    pGame->pSpot2 = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, "2. Player 2", WINDOW_WIDTH/2, 400);
+    pGame->pSpot3 = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, "3. Player 3", WINDOW_WIDTH/2, 475);
+    pGame->pSpot4 = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, "4. Player 4", WINDOW_WIDTH/2, 550);
+
+    drawText(pGame->pLobbyText);
+    drawText(pGame->pHostSpotText);
+    drawText(pGame->pSpot1);
+    drawText(pGame->pSpot2);
+    drawText(pGame->pSpot3);
+    drawText(pGame->pSpot4);
+    SDL_RenderPresent(pGame->pRenderer);
 }
 
 void renderGame(Game *pGame) {
@@ -424,8 +431,9 @@ void closeGame(Game *pGame) {
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
 
-    if(pGame->pStartText) destroyText(pGame->pStartText);   
-    if(pGame->pWaitingText) destroyText(pGame->pWaitingText); 
+    if(pGame->pLobbyText) destroyText(pGame->pLobbyText);
+    if(pGame->pSpot1) destroyText(pGame->pSpot1);
+    if(pGame->pHostSpotText) destroyText(pGame->pHostSpotText);
     if(pGame->pOverText) destroyText(pGame->pOverText); 
     if(pGame->pMatchTimerText) destroyText(pGame->pMatchTimerText);
     if(pGame->pGoalsTextTeamA) destroyText(pGame->pGoalsTextTeamA);
