@@ -152,19 +152,6 @@ int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
     return 1;
 }
 
-bool goal(Ball *pBall) {
-    SDL_Rect ballRect = getBallRect(pBall);
-    if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
-        //if ball.x < middle of fiel (around 650) then player 2 scored, else player 1 scored
-        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
-        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
-        pBall->velocityX = 0;
-        pBall->velocityY = 0;
-        return true;
-    }
-    return false;
-}
-
 void getBallSendData(Ball *pBall, BallData *pBallData){
     pBallData->velocityX = pBall->velocityX;
     pBallData->velocityY = pBall->velocityY;
@@ -184,28 +171,29 @@ void destroyBall(Ball *pBall) {
     free(pBall);
 }
 
-bool isLeftGoalScored(Ball *pBall) {
+bool goal(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
-    if (ballRect.x < 0 && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
-        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
-        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
-        pBall->velocityX = 0;
-        pBall->velocityY = 0;
+    if ((ballRect.x + ballRect.w < BALL_WINDOW_X1 || ballRect.x + ballRect.w > BALL_WINDOW_X2) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
         return true;
     }
     return false;
 }
 
-
-bool isRightGoalScored(Ball *pBall) {
+bool goalScored(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
-    if (ballRect.x + ballRect.w > WINDOW_WIDTH && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
-        
+    
+    if (ballRect.x < WINDOW_WIDTH/2) { //ball is in left half of field
         setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
         setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
         pBall->velocityX = 0;
         pBall->velocityY = 0;
-        return true;
+        return 0;
     }
-    return false;
+    else { //ball is in right half of field
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return 1;
+    }
 }
