@@ -231,7 +231,11 @@ void run(Game *pGame) {
                     SDL_Rect playerRect = getPlayerRect(pGame->pPlayer[i]);
                     SDL_Rect ballRect = getBallRect(pGame->pBall);
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
-                    updatePowerCube(pGame->pPower, pGame->pRenderer, getPlayerRect(pGame->pPlayer[i])); // Example for one player
+                    if(checkCollision(getPlayerRect(pGame->pPlayer[i]), getPowerRect(pGame->pPower))) {
+                        updatePowerCube(pGame->pPower, pGame->pRenderer, getPlayerRect(pGame->pPlayer[i]));
+                        int powerUpValue = rand()%3 +1; //NR_OF_POWERUPS
+                        assignPowerUp(pGame->pPlayer[i], powerUpValue);
+                    }
                 }
                if (!goal(pGame->pBall)) restrictBallWithinWindow(pGame->pBall);
                 renderGame(pGame);

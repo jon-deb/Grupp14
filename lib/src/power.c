@@ -63,17 +63,6 @@ void spawnPowerCube(Power *power) {
     }
 }
 
-void handlePowerCubeCollision(Power *power, SDL_Rect playerRect) {
-    if (power->visible && checkPowerCollision(playerRect, power->rect)) {
-        power->visible = false;
-
-        if (power->restartTimerID != 0) {
-            SDL_RemoveTimer(power->restartTimerID);
-        }
-        power->restartTimerID = SDL_AddTimer(10000, respawnPowerCubeCallback, power); // Respawn after 10 seconds
-    }
-}
-
 Uint32 respawnPowerCubeCallback(Uint32 interval, void *param) {
     Power *power = (Power *)param;
     if (power) {
@@ -89,7 +78,11 @@ void renderPowerCube(Power *power, SDL_Renderer *renderer) {
 }
 
 void updatePowerCube(Power *power, SDL_Renderer *renderer, SDL_Rect playerRect) {
-    handlePowerCubeCollision(power, playerRect);
+    if(power->visible) {
+        power->visible = false;
+        if(power->restartTimerID) SDL_RemoveTimer(power->restartTimerID);
+        power->restartTimerID = SDL_AddTimer(10000, respawnPowerCubeCallback, power); // Respawn after 10 seconds
+    }
     renderPowerCube(power, renderer);
 }
 

@@ -1,23 +1,15 @@
-# Client Makefile for mac
+# Makefile for Windows
 SRCDIR=./src
 COMMONSRCDIR=../lib/src
 INCDIR=../lib/include
-CC=gcc-13
-INCLUDE=/opt/homebrew/include
+CC=gcc
+INCLUDE = -IC:/msys64/mingw64/include/SDL2 -I$(INCDIR) 
+CFLAGS = -g $(INCLUDE) -c
+LDFLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_net -mwindows -lm
 
-# Paths to the SDL2 and SDL2_image includes
-SDL2_INCLUDE=/opt/homebrew/include/SDL2
-SDL_IMAGE_INCLUDE=/opt/homebrew/Cellar/sdl2_image/2.8.2_1/include/SDL2
-
-# Compiler flags
-CFLAGS=-g -I$(INCLUDE) -I$(SDL2_INCLUDE) -I$(SDL_IMAGE_INCLUDE) -I$(INCDIR) -c
-LIBS=/opt/homebrew/lib
-
-# Linker flags
-LDFLAGS=-L$(LIBS) -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_net -lm
-
-client: main.o ball.o player.o text.o power.o
-	$(CC) main.o ball.o player.o text.o power.o -o client $(LDFLAGS)
+# Targets
+server: main.o player.o ball.o text.o power.o
+	$(CC) main.o player.o ball.o text.o power.o -o server $(LDFLAGS)
 
 main.o: $(SRCDIR)/main.c $(INCDIR)/player_data.h $(INCDIR)/player.h $(INCDIR)/ball.h $(INCDIR)/text.h $(INCDIR)/power.h
 	$(CC) $(CFLAGS) $(SRCDIR)/main.c -o main.o
@@ -35,4 +27,5 @@ power.o: $(COMMONSRCDIR)/power.c $(INCDIR)/power.h
 	$(CC) $(CFLAGS) $(COMMONSRCDIR)/power.c -o power.o
 
 clean:
-	rm -f *.o client
+	rm *.exe
+	rm *.o

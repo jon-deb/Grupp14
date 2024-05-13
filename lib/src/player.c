@@ -1,7 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
-#include "player.h"
 #include "player_data.h"
+#include "player.h"
 #include "ball.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +19,11 @@
 #define MOVEMENT_SPEED 400
 
 struct player {
-    float playerVelocityX, playerVelocityY;
+    float playerVelocityX;
+    float playerVelocityY;
+    float speedMultiplier;
+    PowerUp activePower;
+    SDL_TimerID TimerID;
     int xPos, yPos;
     Ball *pBall;
     SDL_Texture *playerTexture;
@@ -55,6 +59,41 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
         return NULL;
     }
     return pPlayer;
+}
+
+Uint32 deactivatePowerUp(Uint32 interval, void *param) {
+    Player *player = (Player *)param;
+    player->activePower = NO_POWERUP;
+    player->speedMultiplier = 1.0;
+    if (player->TimerID != 0) {
+        SDL_RemoveTimer(player->TimerID);
+        player->TimerID = 0;
+    }
+    return 0;
+}
+
+void activateRandomPowerUp(Player *player) {
+    int powerUp = rand() % 3 + 1;
+    assignPowerUp(player, powerUp);
+}
+
+void assignPowerUp(Player *player, PowerUp powerUp) {
+    player->activePower = powerUp;
+    switch (powerUp) {
+        case SPEED_BOOST:
+            player->speedMultiplier = 2.0;
+            break;
+        case FREEZE:
+            // Code to slow down opponents
+            break;
+        case SLOW_DOWN_OPPONENTS:
+            // Code to repel other players
+            break;
+        default:
+            break;
+    }
+    if (player->TimerID) SDL_RemoveTimer(player->TimerID);
+    player->TimerID = SDL_AddTimer(5000, deactivatePowerUp, player);
 }
 
 void updatePlayerVelocity(Player *pPlayer, float vx, float vy) {

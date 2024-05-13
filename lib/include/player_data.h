@@ -11,6 +11,9 @@ typedef enum gameState GameState;
 enum clientCommand{READY, UP, DOWN, LEFT, RIGHT, RESET_X_VEL, RESET_Y_VEL, RESTRICT_PLAYER};
 typedef enum clientCommand ClientCommand;
 
+enum powerUp{NO_POWERUP, SPEED_BOOST, FREEZE, SLOW_DOWN_OPPONENTS};
+typedef enum powerUp PowerUp;
+
 typedef struct clientData{
     ClientCommand command;
     int clientNumber;
