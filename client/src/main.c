@@ -190,7 +190,8 @@ void run(Game *pGame) {
     Uint32 currentTick;
     currentTick = SDL_GetTicks();
     float deltaTime;
-    SDL_TimerID timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
+    //SDL_TimerID timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
+    SDL_TimerID timerID = 0;
     int joining = 0;
 
 
@@ -198,7 +199,9 @@ void run(Game *pGame) {
         switch(pGame->state) 
         {
             case ONGOING:
-
+            if(timerID == 0) {
+               timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
+            }
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
 
