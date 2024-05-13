@@ -334,61 +334,68 @@ void updateWithServerData(Game *pGame){
 
 void handleInput(Game *pGame, SDL_Event *pEvent) {
     ClientData cData;
-    switch (pEvent->type) {
-        case SDL_KEYDOWN:
-            cData.clientNumber = pGame->playerNr;
-            switch (pEvent->key.keysym.scancode) {
-                case SDL_SCANCODE_W:
-                case SDL_SCANCODE_UP:
-                    updatePlayerVUp(pGame->pPlayer[pGame->playerNr]);
-                    cData.command = UP;
-                    break;
-                case SDL_SCANCODE_S:
-                case SDL_SCANCODE_DOWN:
-                    updatePlayerVDown(pGame->pPlayer[pGame->playerNr]);
-                    cData.command = DOWN;
-                    break;
-                case SDL_SCANCODE_A:
-                case SDL_SCANCODE_LEFT:
-                    updatePlayerVLeft(pGame->pPlayer[pGame->playerNr]);
-                    cData.command = LEFT;
-                    break;
-                case SDL_SCANCODE_D:
-                case SDL_SCANCODE_RIGHT:
-                    updatePlayerVRight(pGame->pPlayer[pGame->playerNr]);
-                    cData.command = RIGHT;
-                    break;
-            }
-            memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
-            pGame->pPacket->len = sizeof(ClientData);
-            SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
-        break;
-        case SDL_KEYUP:
-            cData.clientNumber = pGame->playerNr;
-            switch (pEvent->key.keysym.scancode) {
-                case SDL_SCANCODE_W:
-                case SDL_SCANCODE_UP:
-                case SDL_SCANCODE_S:
-                case SDL_SCANCODE_DOWN:
+    cData.clientNumber = pGame->playerNr;
+
+    if (pEvent->type == SDL_KEYDOWN) {
+        switch (pEvent->key.keysym.scancode) {
+            case SDL_SCANCODE_W:
+            case SDL_SCANCODE_UP:
+                updatePlayerVUp(pGame->pPlayer[pGame->playerNr]);
+                cData.command = UP;
+                break;
+            case SDL_SCANCODE_S:
+            case SDL_SCANCODE_DOWN:
+                updatePlayerVDown(pGame->pPlayer[pGame->playerNr]);
+                cData.command = DOWN;
+                break;
+            case SDL_SCANCODE_A:
+            case SDL_SCANCODE_LEFT:
+                updatePlayerVLeft(pGame->pPlayer[pGame->playerNr]);
+                cData.command = LEFT;
+                break;
+            case SDL_SCANCODE_D:
+            case SDL_SCANCODE_RIGHT:
+                updatePlayerVRight(pGame->pPlayer[pGame->playerNr]);
+                cData.command = RIGHT;
+                break;
+        }
+        memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
+        pGame->pPacket->len = sizeof(ClientData);
+        SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
+    } else if (pEvent->type == SDL_KEYUP) {
+        bool sendUpdate = false;
+        switch (pEvent->key.keysym.scancode) {
+            case SDL_SCANCODE_W:
+            case SDL_SCANCODE_UP:
+            case SDL_SCANCODE_S:
+            case SDL_SCANCODE_DOWN:
+                if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_W] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_UP] &&
+                    !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_S] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN]) {
                     resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 0, 1);
                     cData.command = RESET_Y_VEL;
-                    break;
-                case SDL_SCANCODE_A:
-                case SDL_SCANCODE_LEFT:
-                case SDL_SCANCODE_D:
-                case SDL_SCANCODE_RIGHT:
+                    sendUpdate = true;
+                }
+                break;
+            case SDL_SCANCODE_A:
+            case SDL_SCANCODE_LEFT:
+            case SDL_SCANCODE_D:
+            case SDL_SCANCODE_RIGHT:
+                if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_A] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT] &&
+                    !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_D] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT]) {
                     resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 1, 0);
                     cData.command = RESET_X_VEL;
-                    break;
-            }
+                    sendUpdate = true;
+                }
+                break;
+        }
+        if (sendUpdate) {
             memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
             pGame->pPacket->len = sizeof(ClientData);
-            SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
-        break;
-        restrictPlayerWithinWindow(pGame->pPlayer[0], WINDOW_WIDTH, WINDOW_HEIGHT);
-        cData.command = RESTRICT_PLAYER;
+            SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
+        }
     }
 }
+
 
 Uint32 decreaseMatchTime(Uint32 interval, void *param) {
     Uint32 *pMatchTime = (Uint32 *)param;
