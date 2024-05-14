@@ -14,8 +14,8 @@ server: main.o player.o ball.o text.o power.o
 main.o: $(SRCDIR)/main.c $(INCDIR)/player_data.h $(INCDIR)/player.h $(INCDIR)/ball.h $(INCDIR)/text.h $(INCDIR)/power.h
 	$(CC) $(CFLAGS) $(SRCDIR)/main.c -o main.o
 
-player.o: $(COMMONSRCDIR)/player.c $(INCDIR)/player_data.h $(INCDIR)/player.h
-	$(CC) $(CFLAGS) $(COMMONSRCDIR)/player.c -o player.o
+player.o: $(COMMONSRCDIR)/player.c $(INCDIR)/player_data.h $(INCDIR)/player.h $(INCDIR)/ball.h
+	$(CC) $(CFLAGS) $(COMMONSRCDIR)/player.c
 
 text.o: $(COMMONSRCDIR)/text.c $(INCDIR)/text.h
 	$(CC) $(CFLAGS) $(COMMONSRCDIR)/text.c -o text.o

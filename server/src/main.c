@@ -18,6 +18,7 @@
 #define WINDOW_HEIGHT 800
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define MOVEMENT_SPEED 400
+#define NR_OF_POWERUPS 2
 
 typedef struct game{
     SDL_Window *pWindow;
@@ -28,7 +29,7 @@ typedef struct game{
     
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
-    Power *pPower;
+    PowerUpBox *pPowerUpBox;
     Text *pWaitingText, *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB;
     GameState state;
     ServerData sData;
@@ -147,13 +148,13 @@ int initiate(Game *pGame){
         return 0;
     }
 
-    pGame->pPower = createPower(pGame->pRenderer);
-    if (!pGame->pPower) {
+    pGame->pPowerUpBox = createPower(pGame->pRenderer);
+    if (!pGame->pPowerUpBox) {
         printf("Failed to initialize power cube.\n");
         closeGame(pGame);
         return 0;
     }
-    spawnPowerCube(pGame->pPower);
+    spawnPowerCube(pGame->pPowerUpBox);
 
     pGame->teamA = 0;
     pGame->teamB = 0;
@@ -228,7 +229,11 @@ void run(Game *pGame){
                     SDL_Rect playerRect = getPlayerRect(pGame->pPlayer[i]);
                     SDL_Rect ballRect = getBallRect(pGame->pBall);
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
-                    updatePowerCube(pGame->pPower, pGame->pRenderer, getPlayerRect(pGame->pPlayer[i])); // Example for one player
+                    if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
+                        updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect);
+                        int powerUpValue = rand()%NR_OF_POWERUPS;
+                        assignPowerUp(powerUpValue, pGame->pPlayer[i]);
+                    } 
                 }
 
                if (!goal(pGame->pBall)) {
@@ -307,7 +312,7 @@ void renderGame(Game *pGame) {
     SDL_Rect ballRect = getBallRect(pGame->pBall);
     SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
     SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
-    renderPowerCube(pGame->pPower, pGame->pRenderer);
+    renderPowerCube(pGame->pPowerUpBox, pGame->pRenderer);
     SDL_RenderPresent(pGame->pRenderer);
     SDL_Delay(1000/60);
 }
@@ -382,7 +387,7 @@ void closeGame(Game *pGame){
         }
     }
     if (pGame->pBall) destroyBall(pGame->pBall);
-    if (pGame->pPower) destroyPowerCube(pGame->pPower);
+    if (pGame->pPowerUpBox) destroyPowerCube(pGame->pPowerUpBox);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
   

@@ -23,6 +23,7 @@
 #define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define MOVEMENT_SPEED 400
+#define NR_OF_POWERUPS 2
 
 typedef struct game {
     SDL_Window *pWindow;
@@ -30,13 +31,13 @@ typedef struct game {
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
     TTF_Font *pFont, *pScoreboardFont;
-    
-    Text *pStartText,*pWaitingText, *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB;
+
+    Text *pStartText,*pWaitingText, *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pPowerUpText[NR_OF_POWERUPS];
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
-    Power *pPower;
+    PowerUpBox *pPowerUpBox;
     GameState state;
-    
+
     int teamA;
     int teamB;
     int nrOfPlayers, playerNr;
@@ -149,14 +150,14 @@ int initiate(Game *pGame) {
         return 0;
     }
 
-    pGame->pPower = createPower(pGame->pRenderer);
-    if (!pGame->pPower) {
+    pGame->pPowerUpBox = createPower(pGame->pRenderer);
+    if (!pGame->pPowerUpBox) {
         printf("Failed to initialize power cube.\n");
         closeGame(pGame);
         return 0;
     }
-    spawnPowerCube(pGame->pPower);
-    
+    spawnPowerCube(pGame->pPowerUpBox);
+
     pGame->teamA = 0;
     pGame->teamB = 0;
     pGame->pStartText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Press space to join",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
@@ -167,6 +168,9 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;
     }
+
+    pGame->pPowerUpText[0] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Speed increased",WINDOW_WIDTH,WINDOW_HEIGHT-200); //random värden, testar bara
+    pGame->pPowerUpText[1] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"FROZEN",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
 
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
@@ -197,7 +201,7 @@ void run(Game *pGame) {
     while (!close_requested) {
         switch(pGame->state) 
         {
-            case ONGOING:
+            case ONGOING:   
             if(timerID == 0) {
                timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
             }
@@ -216,7 +220,7 @@ void run(Game *pGame) {
                     }
                 }
 
-                for (int i=0; i<MAX_PLAYERS; i++)
+                for (int i = 0; i < MAX_PLAYERS; i++)
                 {
                     updatePlayerPosition(pGame->pPlayer[i], deltaTime);
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -230,22 +234,26 @@ void run(Game *pGame) {
                     SDL_Rect playerRect = getPlayerRect(pGame->pPlayer[i]);
                     SDL_Rect ballRect = getBallRect(pGame->pBall);
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
-                    updatePowerCube(pGame->pPower, pGame->pRenderer, getPlayerRect(pGame->pPlayer[i])); // Example for one player
+                    if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
+                        updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect); 
+                        int powerUpValue = rand()%NR_OF_POWERUPS;
+                        assignPowerUp(/*powerUpValue*/1, pGame->pPlayer[i]);
+                    }   
                 }
 
-               if (!goal(pGame->pBall)) {
+                if (!goal(pGame->pBall)) {
                     restrictBallWithinWindow(pGame->pBall);
-               }
-               else {
-                    for(int i = 0; i < pGame->nrOfPlayers; i++)
-                        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-                //false if team left (A) scored and true if team right (B) scored
-                    if (!goalScored(pGame->pBall)) {
-                        pGame->teamA++;
-                    } else if (goalScored) {
-                        pGame->teamB++;
-                    }
-               }
+                }
+                else {
+                        for(int i = 0; i < pGame->nrOfPlayers; i++)
+                            setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+                    //false if team left (A) scored and true if team right (B) scored
+                        if (!goalScored(pGame->pBall)) {
+                            pGame->teamA++;
+                        } else if (goalScored) {
+                            pGame->teamB++;
+                        }
+                }
                 renderGame(pGame);
 
                 break;
@@ -286,7 +294,7 @@ void run(Game *pGame) {
 void renderGame(Game *pGame) {
     SDL_RenderClear(pGame->pRenderer);
     SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
-   
+
     int minutes = pGame->matchTime / 60000;
     int seconds = (pGame->matchTime % 60000) / 1000;
     
@@ -300,12 +308,12 @@ void renderGame(Game *pGame) {
 
     pGame->pMatchTimerText = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, timeString, 790, 64);
     pGame->pGoalsTextTeamA = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, goalsStringTeamA, 494, 64);
-    pGame->pGoalsTextTeamB = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, goalsStringTeamB, 542, 64);
-
+    pGame->pGoalsTextTeamB = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, goalsStringTeamB, 542, 64); 
+    
     if(!pGame->pMatchTimerText || !pGame->pGoalsTextTeamA || !pGame->pGoalsTextTeamB){
         printf("Error: %s\n",SDL_GetError());
         closeGame(pGame);
-    }
+    } 
     
     drawText(pGame->pGoalsTextTeamA);
     drawText(pGame->pGoalsTextTeamB);
@@ -313,18 +321,18 @@ void renderGame(Game *pGame) {
     destroyText(pGame->pMatchTimerText);
     destroyText(pGame->pGoalsTextTeamA);
     destroyText(pGame->pGoalsTextTeamB);
-
+    
     for (int i = 0; i < MAX_PLAYERS; i++) {
         Player *player = pGame->pPlayer[i];
         SDL_Rect playerRect = getPlayerRect(player);
         SDL_Texture *playerTexture = getPlayerTexture(player);
         SDL_RenderCopy(pGame->pRenderer, playerTexture, NULL, &playerRect);
     }
-    
+
     SDL_Rect ballRect = getBallRect(pGame->pBall);
     SDL_Texture *ballTexture = getBallTexture(pGame->pBall);
     SDL_RenderCopy(pGame->pRenderer, ballTexture, NULL, &ballRect);
-    renderPowerCube(pGame->pPower, pGame->pRenderer);
+    renderPowerCube(pGame->pPowerUpBox, pGame->pRenderer);
     SDL_RenderPresent(pGame->pRenderer);
     SDL_Delay(1000/60); 
 }
@@ -343,67 +351,70 @@ void updateWithServerData(Game *pGame){
 void handleInput(Game *pGame, SDL_Event *pEvent) {
     ClientData cData;
     cData.clientNumber = pGame->playerNr;
-
-    if (pEvent->type == SDL_KEYDOWN) {
-        switch (pEvent->key.keysym.scancode) {
-            case SDL_SCANCODE_W:
-            case SDL_SCANCODE_UP:
-                updatePlayerVUp(pGame->pPlayer[pGame->playerNr]);
-                cData.command = UP;
-                break;
-            case SDL_SCANCODE_S:
-            case SDL_SCANCODE_DOWN:
-                updatePlayerVDown(pGame->pPlayer[pGame->playerNr]);
-                cData.command = DOWN;
-                break;
-            case SDL_SCANCODE_A:
-            case SDL_SCANCODE_LEFT:
-                updatePlayerVLeft(pGame->pPlayer[pGame->playerNr]);
-                cData.command = LEFT;
-                break;
-            case SDL_SCANCODE_D:
-            case SDL_SCANCODE_RIGHT:
-                updatePlayerVRight(pGame->pPlayer[pGame->playerNr]);
-                cData.command = RIGHT;
-                break;
-        }
-        memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
-        pGame->pPacket->len = sizeof(ClientData);
-        SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
-    } else if (pEvent->type == SDL_KEYUP) {
-        bool sendUpdate = false;
-        switch (pEvent->key.keysym.scancode) {
-            case SDL_SCANCODE_W:
-            case SDL_SCANCODE_UP:
-            case SDL_SCANCODE_S:
-            case SDL_SCANCODE_DOWN:
-                if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_W] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_UP] &&
-                    !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_S] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN]) {
-                    resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 0, 1);
-                    cData.command = RESET_Y_VEL;
-                    sendUpdate = true;
-                }
-                break;
-            case SDL_SCANCODE_A:
-            case SDL_SCANCODE_LEFT:
-            case SDL_SCANCODE_D:
-            case SDL_SCANCODE_RIGHT:
-                if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_A] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT] &&
-                    !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_D] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT]) {
-                    resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 1, 0);
-                    cData.command = RESET_X_VEL;
-                    sendUpdate = true;
-                }
-                break;
-        }
-        if (sendUpdate) {
+    
+    PowerUp currentPower;
+    currentPower = getCurrentPowerUp(pGame->pPlayer[pGame->playerNr]);
+    if(currentPower != FROZEN) {
+        if (pEvent->type == SDL_KEYDOWN) {
+            switch (pEvent->key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                case SDL_SCANCODE_UP:
+                    updatePlayerVUp(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = UP;
+                    break;
+                case SDL_SCANCODE_S:
+                case SDL_SCANCODE_DOWN:
+                    updatePlayerVDown(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = DOWN;
+                    break;
+                case SDL_SCANCODE_A:
+                case SDL_SCANCODE_LEFT:
+                    updatePlayerVLeft(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = LEFT;
+                    break;
+                case SDL_SCANCODE_D:
+                case SDL_SCANCODE_RIGHT:
+                    updatePlayerVRight(pGame->pPlayer[pGame->playerNr]);
+                    cData.command = RIGHT;
+                    break;
+            }
             memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
             pGame->pPacket->len = sizeof(ClientData);
             SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
+        } else if (pEvent->type == SDL_KEYUP) {
+            bool sendUpdate = false;
+            switch (pEvent->key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                case SDL_SCANCODE_UP:
+                case SDL_SCANCODE_S:
+                case SDL_SCANCODE_DOWN:
+                    if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_W] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_UP] &&
+                        !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_S] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN]) {
+                        resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 0, 1);
+                        cData.command = RESET_Y_VEL;
+                        sendUpdate = true;
+                    }
+                    break;
+                case SDL_SCANCODE_A:
+                case SDL_SCANCODE_LEFT:
+                case SDL_SCANCODE_D:
+                case SDL_SCANCODE_RIGHT:
+                    if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_A] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT] &&
+                        !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_D] && !SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT]) {
+                        resetPlayerSpeed(pGame->pPlayer[pGame->playerNr], 1, 0);
+                        cData.command = RESET_X_VEL;
+                        sendUpdate = true;
+                    }
+                    break;
+            }
+            if (sendUpdate) {
+                memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
+                pGame->pPacket->len = sizeof(ClientData);
+                SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
+            }
         }
     }
 }
-
 
 Uint32 decreaseMatchTime(Uint32 interval, void *param) {
     Uint32 *pMatchTime = (Uint32 *)param;
@@ -415,12 +426,12 @@ Uint32 decreaseMatchTime(Uint32 interval, void *param) {
 
 void closeGame(Game *pGame) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
-        if (pGame->pPlayer[i]) {
+        if(pGame->pPlayer[i]) {
             destroyPlayer(pGame->pPlayer[i]);
         }
     }
     if (pGame->pBall) destroyBall(pGame->pBall);
-    if (pGame->pPower) destroyPowerCube(pGame->pPower);
+    if (pGame->pPowerUpBox) destroyPowerCube(pGame->pPowerUpBox);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
 
@@ -432,6 +443,9 @@ void closeGame(Game *pGame) {
     if(pGame->pGoalsTextTeamB) destroyText(pGame->pGoalsTextTeamB);
     if(pGame->pFont) TTF_CloseFont(pGame->pFont);
     if(pGame->pScoreboardFont) TTF_CloseFont(pGame->pScoreboardFont);
+    for(int i=0; i<NR_OF_POWERUPS; i++) {
+        if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
+    }   
 
     SDLNet_Quit();
     TTF_Quit();

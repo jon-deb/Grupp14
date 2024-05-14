@@ -4,17 +4,16 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
-typedef struct power Power;
+typedef struct powerUpBox PowerUpBox;
 
-Power *createPower(SDL_Renderer *renderer);
-void spawnPowerCube(Power *power);
+PowerUpBox *createPower(SDL_Renderer *renderer);
+void spawnPowerCube(PowerUpBox *pPowerUpBox);
 Uint32 respawnPowerCubeCallback(Uint32 interval, void *param);
-void handlePowerCubeCollision(Power *power, SDL_Rect playerRect);
-void renderPowerCube(Power *power, SDL_Renderer *renderer);
-void updatePowerCube(Power *power, SDL_Renderer *renderer, SDL_Rect playerRect);
-SDL_Texture *getPowerTexture(Power *power);
-SDL_Rect getPowerRect(Power *power);
-int checkPowerCollision(SDL_Rect rect1, SDL_Rect rect2);
-void destroyPowerCube(Power *power);
+int handlePowerCubeCollision(PowerUpBox *pPowerUpBox, SDL_Rect playerRect);
+void renderPowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer);
+void updatePowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer, SDL_Rect playerRect);
+SDL_Texture *getPowerTexture(PowerUpBox *pPowerUpBox);
+SDL_Rect getPowerRect(PowerUpBox *pPowerUpBox);
+void destroyPowerCube(PowerUpBox *pPowerUpBox);
 
 #endif
