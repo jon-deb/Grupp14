@@ -19,13 +19,11 @@
 #define MOVEMENT_SPEED 400
 
 struct player {
-    float playerVelocityX;
-    float playerVelocityY;
-    float speedMultiplier;
-    PowerUp activePower;
-    float powerUpTimer;
+    float playerVelocityX, playerVelocityY, speedMultiplier;
     int xPos, yPos;
     Ball *pBall;
+    PowerUp activePower;
+    SDL_TimerID powerUpTimer;
     SDL_Texture *playerTexture;
     SDL_Rect playerRect;
     //SDL_Renderer *pGameRenderer; maybe add
@@ -45,7 +43,7 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
     pPlayer->activePower = NO_POWERUP;
     pPlayer->speedMultiplier = 1;
-    //pPlayer->activePower = SPEED_BOOST;
+    //pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer); //testa att kommentera bort innan push
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
@@ -68,6 +66,29 @@ void assignPowerUp(int powerUpValue, Player *pPlayer) {
     pPlayer->activePower = powerUpValue + 1; //+1 to not get NO_POWERUP
     //pPlayer->activePower = SPEED_BOOST;
     if(pPlayer->activePower == SPEED_BOOST) pPlayer->speedMultiplier=2;
+    if(pPlayer->powerUpTimer != 0) SDL_RemoveTimer(pPlayer->powerUpTimer);
+    pPlayer->powerUpTimer = SDL_AddTimer(3000, removePowerUp, pPlayer);
+}
+
+void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) { //kan säkert göras snyggare...
+    PowerUp currentPower = pPlayer1->activePower;
+    if(currentPower == FREEZE) {
+        assignPowerUp(3, pPlayer2); //player2 state is now frozen
+        return;
+    }
+    currentPower = pPlayer2->activePower;
+    if(currentPower == FREEZE) assignPowerUp(3, pPlayer1); //player1 state is now frozen
+}
+
+Uint32 removePowerUp(Uint32 interval, void *param) {
+    Player *pPlayer = (Player *)param;
+    pPlayer->speedMultiplier = 1;
+    pPlayer->activePower = NO_POWERUP;
+    return 0;
+}
+
+int getCurrentPowerUp(Player *pPlayer) {
+    return pPlayer->activePower;
 }
 
 void updatePlayerVelocity(Player *pPlayer, float vx, float vy) {
@@ -184,21 +205,19 @@ void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
     pPlayer->playerVelocityY = 0;
 }
 
-/*void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
+void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
     pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
-    pPlayerData->yPos = pPlayer->yPos;
-    pPlayerData->xPos = pPlayer->xPos;
-    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+    pPlayerData->yPos = pPlayer->playerRect.y;
+    pPlayerData->xPos = pPlayer->playerRect.x;
 }
 
 void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
-    pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
-    pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
-    pPlayerData->yPos = pPlayer->yPos;
-    pPlayerData->xPos = pPlayer->xPos;
-    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}*/
+    pPlayer->playerVelocityX = pPlayerData->playerVelocityX;
+    pPlayer->playerVelocityY = pPlayerData->playerVelocityY;
+    pPlayer->playerRect.y = pPlayerData->yPos;
+    pPlayer->playerRect.x = pPlayerData->xPos;
+}
 
 void destroyPlayer(Player *pPlayer) {
     if (pPlayer != NULL) {
@@ -213,15 +232,17 @@ void destroyPlayer(Player *pPlayer) {
 void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2) {
     SDL_Rect rect1 = getPlayerRect(pPlayer1);
     SDL_Rect rect2 = getPlayerRect(pPlayer2);
-
+    
     if (checkCollision(rect1, rect2)) {
+        freezeEnemyPlayer(pPlayer1, pPlayer2);
         // Calculate overlap in both dimensions
-        int overlapX = (rect1.x < rect2.x) ? (rect1.x + rect1.w - rect2.x) : (rect2.x + rect2.w - rect1.x);
-
+        int overlapX;
         if(rect1.x<rect2.x) overlapX = (rect1.x + rect1.w - rect2.x);
         else overlapX = (rect2.x + rect2.w - rect1.x);
 
-        int overlapY = (rect1.y < rect2.y) ? (rect1.y + rect1.h - rect2.y) : (rect2.y + rect2.h - rect1.y);
+        int overlapY;
+        if(rect1.y<rect2.y) overlapY = (rect1.y + rect1.h - rect2.y);
+        else overlapY = (rect2.y + rect2.h - rect1.y);
 
         // Resolve collision based on the lesser overlap
         if (overlapX < overlapY) {

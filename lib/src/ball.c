@@ -1,6 +1,6 @@
 #include <SDL.h>
 #include "player_data.h"
-#include "Ball.h"
+#include "ball.h"
 #include <SDL_image.h>
 #include <stdbool.h>
 
@@ -22,8 +22,7 @@ typedef struct ball {
     SDL_Texture *texture;
     SDL_Rect rect;
     SDL_Surface *surface;
-    float velocityX;
-    float velocityY;
+    float velocityX, velocityY;
     bool collided;
 } Ball;
 
@@ -100,12 +99,18 @@ void applyFriction(Ball *pBall) {
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if (ballRect.x < BALL_WINDOW_X1) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, 0);
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+            
+            setBallX(pBall, 0);
+        }
         else setBallX(pBall, BALL_WINDOW_X1);
         pBall->velocityX = -pBall->velocityX;
     } 
     if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) setBallX(pBall, WINDOW_WIDTH);
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM){
+            
+            setBallX(pBall, WINDOW_WIDTH);
+        } 
         else setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
         pBall->velocityX = -pBall->velocityX;
     }
@@ -147,35 +152,48 @@ int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
     return 1;
 }
 
-bool goal(Ball *pBall) {
-    SDL_Rect ballRect = getBallRect(pBall);
-    if ((ballRect.x < 0 || ballRect.x + ballRect.w > WINDOW_WIDTH) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
-        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
-        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
-        pBall->velocityX = 0;
-        pBall->velocityY = 0;
-        return true;
-    }
-    return false;
-}
-
-/*void getBallSendData(Ball *pRocket, BallData *pBallData){
+void getBallSendData(Ball *pBall, BallData *pBallData){
     pBallData->velocityX = pBall->velocityX;
     pBallData->velocityY = pBall->velocityY;
-    pBallData->x = pBall->x;
-    pBallData->y = pBall->y;
-    getBallSendData(pPlayer->pBall,&(pPlayerData->bData));
+    pBallData->x = pBall->rect.x;
+    pBallData->y = pBall->rect.y;
 }
 
 void updateBallWithRecievedData(Ball *pBall, BallData *pBallData){
     pBall->velocityX = pBallData->velocityX;
     pBall->velocityY = pBallData->velocityY; 
-    pBall->x = pBallData->x;
-    pBall->y = pBallData->y;
-    updateBallWithRecievedData(pPlayer->pBall,&(pPlayerData->bData));
-}*/
+    pBall->rect.x = pBallData->x;
+    pBall->rect.y = pBallData->y;
+}
 
 void destroyBall(Ball *pBall) {
     if (pBall->texture) SDL_DestroyTexture(pBall->texture);
     free(pBall);
+}
+
+bool goal(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    if ((ballRect.x + ballRect.w < BALL_WINDOW_X1 || ballRect.x + ballRect.w > BALL_WINDOW_X2) && ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
+        return true;
+    }
+    return false;
+}
+
+bool goalScored(Ball *pBall) {
+    SDL_Rect ballRect = getBallRect(pBall);
+    
+    if (ballRect.x < WINDOW_WIDTH/2) { //ball is in left half of field
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return 0;
+    }
+    else { //ball is in right half of field
+        setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
+        setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        pBall->velocityX = 0;
+        pBall->velocityY = 0;
+        return 1;
+    }
 }

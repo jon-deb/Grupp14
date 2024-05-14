@@ -11,7 +11,7 @@ typedef enum gameState GameState;
 enum clientCommand{READY, UP, DOWN, LEFT, RIGHT, RESET_X_VEL, RESET_Y_VEL, RESTRICT_PLAYER};
 typedef enum clientCommand ClientCommand;
 
-enum powerUp{NO_POWERUP, SPEED_BOOST, FREEZE};
+enum powerUp{NO_POWERUP, FREEZE, SPEED_BOOST, FROZEN};
 typedef enum powerUp PowerUp;
 
 typedef struct clientData{
@@ -27,12 +27,12 @@ typedef struct ballData{
 typedef struct playerData{
     float playerVelocityX, playerVelocityY;
     int xPos, yPos;
-    BallData bData;
     //PowerUp power;
 } PlayerData;   
 
 typedef struct serverData{
     PlayerData players[MAX_PLAYERS];
+    BallData ball;
     int clientNr;
     GameState gState;
 } ServerData;
