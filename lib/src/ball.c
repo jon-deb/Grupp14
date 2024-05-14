@@ -10,7 +10,7 @@
 #define BALL_WINDOW_X2 1236 //distance from left of window to right of field
 #define BALL_WINDOW_Y1 114 //distance from top of window to top of field
 #define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
-#define MOVEMENT_SPEED 400
+#define MOVEMENT_SPEED 200
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
 #define FRICTION_COEFFICIENT 0.95f
 #define BALL_SPEED_AFTER_COLLISION 500
@@ -90,12 +90,17 @@ void applyFriction(Ball *pBall) {
     float vx = pBall->velocityX;
     float vy = pBall->velocityY;
     
-    // sänker hastigheten 
+    // Minska hastigheten gradvis
     vx *= FRICTION_COEFFICIENT;
     vy *= FRICTION_COEFFICIENT;
 
+    // Om hastigheten är tillräckligt låg, stanna bollen helt
+    if (fabs(vx) < 0.1f) vx = 0.0f;
+    if (fabs(vy) < 0.1f) vy = 0.0f;
+
     setBallVelocity(pBall, vx, vy);
 }
+
 
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
@@ -119,6 +124,7 @@ void restrictBallWithinWindow(Ball *pBall) {
 }
 
 void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
+    static float collisionTimer = 0.0f; 
     if(checkCollision(pRect, bRect)) {
         float playerCenterX = pRect.x + pRect.w / 2;
         float playerCenterY = pRect.y + pRect.h / 2;
@@ -133,19 +139,35 @@ void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
         float normalX = collisionVectorX / distance;
         float normalY = collisionVectorY / distance;
 
+        
         setBallVelocity(pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
+        
+        
+        collisionTimer = 0.5f; // 0.5 sekunder
     }
+    
+    
     applyFriction(pBall);
+    
+    
     updateBallPosition(pBall);
+    
+    
+    collisionTimer -= 1.0f / 60.0f; // Minska med tiden som har gått sedan senaste uppdateringen
+    
+    
+    if (collisionTimer <= 0.0f) {
+        setBallVelocity(pBall, 0, 0);
+    }
 }
 
+
+
+
 int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {
-    if (rect1.y + rect1.h <= rect2.y) return 0; // Bottom is above top
-    if (rect1.y >= rect2.y + rect2.h) return 0; // Top is below bottom
-    if (rect1.x + rect1.w <= rect2.x) return 0; // Right is left of left
-    if (rect1.x >= rect2.x + rect2.w) return 0; // Left is right of right
-    return 1;
+    return SDL_HasIntersection(&rect1, &rect2);
 }
+
 
 bool goal(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
