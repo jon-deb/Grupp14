@@ -138,6 +138,7 @@ int initiate(Game *pGame) {
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
             fprintf(stderr, "Failed to initialize player %d\n", i + 1);
+            closeGame(pGame); //new
             return 0;
         }
     }
@@ -171,14 +172,6 @@ int initiate(Game *pGame) {
 
     pGame->pPowerUpText[0] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Speed increased",WINDOW_WIDTH,WINDOW_HEIGHT-200); //random värden, testar bara
     pGame->pPowerUpText[1] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"FROZEN",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-
-    for(int i=0;i<MAX_PLAYERS;i++){
-        if(!pGame->pPlayer[i]){
-            printf("Error: %s\n",SDL_GetError());
-            closeGame(pGame);
-            return 0;
-        }
-    }
 
     pGame->state = START;
     pGame->matchTime = 300000;
@@ -237,7 +230,7 @@ void run(Game *pGame) {
                     if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
                         updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect); 
                         int powerUpValue = rand()%NR_OF_POWERUPS;
-                        assignPowerUp(/*powerUpValue*/1, pGame->pPlayer[i]);
+                        assignPowerUp(1, pGame->pPlayer[i]);
                     }   
                 }
 

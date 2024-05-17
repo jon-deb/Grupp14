@@ -136,6 +136,7 @@ int initiate(Game *pGame){
         pGame->pPlayer[i] = createPlayer(pGame->pRenderer, WINDOW_WIDTH, WINDOW_HEIGHT, i);
         if (!pGame->pPlayer[i]) {
             fprintf(stderr, "Failed to initialize player %d\n", i + 1);
+            closeGame(pGame); //new
             return 0;
         }
     }
@@ -232,7 +233,7 @@ void run(Game *pGame){
                     if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
                         updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect);
                         int powerUpValue = rand()%NR_OF_POWERUPS;
-                        assignPowerUp(powerUpValue, pGame->pPlayer[i]);
+                        assignPowerUp(1, pGame->pPlayer[i]);
                     } 
                 }
 

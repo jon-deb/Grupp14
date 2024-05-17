@@ -47,6 +47,7 @@ PowerUpBox *createPower(SDL_Renderer *renderer) {
     pPowerUpBox->rect.w = 48;
     pPowerUpBox->rect.h = 48;
     pPowerUpBox->visible = false;
+    pPowerUpBox->restartTimerID=0;
 
     return pPowerUpBox;
 }
@@ -78,7 +79,7 @@ void updatePowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer, SDL_Rect p
     if(pPowerUpBox->visible/*&& checkCollision(playerRect, power->rect)*/) {
         pPowerUpBox->visible = false;
         if(pPowerUpBox->restartTimerID) SDL_RemoveTimer(pPowerUpBox->restartTimerID);
-        pPowerUpBox->restartTimerID = SDL_AddTimer(2000, respawnPowerCubeCallback, pPowerUpBox); // Respawn after 10 seconds (set to 10000)
+        pPowerUpBox->restartTimerID = SDL_AddTimer(10000, respawnPowerCubeCallback, pPowerUpBox); // Respawn after 10 seconds (set to 10000)
     }
     renderPowerCube(pPowerUpBox, renderer);
 }

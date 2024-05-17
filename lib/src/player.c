@@ -43,6 +43,7 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
     pPlayer->activePower = NO_POWERUP;
     pPlayer->speedMultiplier = 1;
+    pPlayer->powerUpTimer=0;
     //pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer); //testa att kommentera bort innan push
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
@@ -66,24 +67,30 @@ void assignPowerUp(int powerUpValue, Player *pPlayer) {
     pPlayer->activePower = powerUpValue + 1; //+1 to not get NO_POWERUP
     //pPlayer->activePower = SPEED_BOOST;
     if(pPlayer->activePower == SPEED_BOOST) pPlayer->speedMultiplier=2;
-    if(pPlayer->powerUpTimer != 0) SDL_RemoveTimer(pPlayer->powerUpTimer);
-    pPlayer->powerUpTimer = SDL_AddTimer(3000, removePowerUp, pPlayer);
+    if(pPlayer->powerUpTimer) SDL_RemoveTimer(pPlayer->powerUpTimer);
+    pPlayer->powerUpTimer = SDL_AddTimer(5000, removePowerUp, pPlayer);
 }
 
 void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) { //kan säkert göras snyggare...
     PowerUp currentPower = pPlayer1->activePower;
     if(currentPower == FREEZE) {
-        assignPowerUp(3, pPlayer2); //player2 state is now frozen
+        assignPowerUp(2, pPlayer2); //player2 state is now frozen
         return;
     }
     currentPower = pPlayer2->activePower;
-    if(currentPower == FREEZE) assignPowerUp(3, pPlayer1); //player1 state is now frozen
+    if(currentPower == FREEZE) assignPowerUp(2, pPlayer1); //player1 state is now frozen
 }
 
 Uint32 removePowerUp(Uint32 interval, void *param) {
     Player *pPlayer = (Player *)param;
-    pPlayer->speedMultiplier = 1;
-    pPlayer->activePower = NO_POWERUP;
+    if(pPlayer) {
+        pPlayer->speedMultiplier = 1;
+        pPlayer->activePower = NO_POWERUP;
+        if (pPlayer->powerUpTimer != 0) {
+            SDL_RemoveTimer(pPlayer->powerUpTimer);
+            pPlayer->powerUpTimer = 0;
+        }
+    }
     return 0;
 }
 
