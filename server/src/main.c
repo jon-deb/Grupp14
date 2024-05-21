@@ -25,15 +25,16 @@ typedef struct game{
     SDL_Renderer *pRenderer;
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
-    TTF_Font *pFont, *pScoreboardFont;
+    TTF_Font *pFont, *pScoreboardFont, *pLobbyFont;
     
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     PowerUpBox *pPowerUpBox;
-    Text *pWaitingText, *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB;
+    Text *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText;
     GameState state;
     ServerData sData;
     
+    bool connected[MAX_PLAYERS];
     int teamA;
     int teamB;
     int nrOfClients, nrOfPlayers;
@@ -47,9 +48,10 @@ typedef struct game{
 int initiate(Game *pGame);
 void run(Game *pGame);
 void renderGame(Game *pGame);
+void renderLobby(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 
-void add(IPaddress address, IPaddress clients[],int *pNrOfClients);
+void add(IPaddress address, IPaddress clients[],int *pNrOfClients, bool connected[]);
 void sendGameData(Game *pGame);
 void executeCommand(Game *pGame,ClientData cData);
 
@@ -97,9 +99,10 @@ int initiate(Game *pGame){
         return 0;    
     }
 
-    pGame->pFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 70);
+    pGame->pFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 100);
     pGame->pScoreboardFont = TTF_OpenFont("../lib/resources/ManaspaceRegular-ZJwZ.ttf", 50);
-    if(!pGame->pFont || !pGame->pScoreboardFont){
+    pGame->pLobbyFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 50);
+    if(!pGame->pFont || !pGame->pScoreboardFont || !pGame->pLobbyFont){
         printf("Error: %s\n",TTF_GetError());
         closeGame(pGame);
         return 0;
@@ -158,13 +161,6 @@ int initiate(Game *pGame){
 
     pGame->teamA = 0;
     pGame->teamB = 0;
-    pGame->pOverText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Game Over",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pWaitingText = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Waiting for clients...",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    if(!pGame->pWaitingText || !pGame->pOverText){
-        printf("Error: %s\n",SDL_GetError());
-        closeGame(pGame);
-        return 0;
-    }
 
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
@@ -176,6 +172,9 @@ int initiate(Game *pGame){
 
     pGame->state = START;
     pGame->nrOfClients = 0;
+    for(int i = 0; i < MAX_PLAYERS; i++) {
+        pGame->connected[i] = false;
+    }
     pGame->matchTime = 300000;
     
     return 1;
@@ -191,6 +190,8 @@ void run(Game *pGame){
     float deltaTime;
 
     SDL_TimerID timerID = 0;
+
+
 
     while(!close_requested){
         switch (pGame->state)
@@ -257,18 +258,79 @@ void run(Game *pGame){
                 sendGameData(pGame);
                 if(pGame->nrOfClients==MAX_PLAYERS) pGame->nrOfClients = 0;
             case START:
-                drawText(pGame->pWaitingText);
+                renderLobby(pGame);
                 SDL_RenderPresent(pGame->pRenderer);
                 if(SDL_PollEvent(&event) && event.type==SDL_QUIT) close_requested = 1;
                 if(SDLNet_UDP_Recv(pGame->pSocket,pGame->pPacket)==1){
-                    add(pGame->pPacket->address,pGame->clients,&(pGame->nrOfClients));
+                    add(pGame->pPacket->address,pGame->clients,&(pGame->nrOfClients), pGame->connected);
                     if(pGame->nrOfClients==MAX_PLAYERS) setUpGame(pGame);
                 }
+                sendGameData(pGame);
+                printf("nrOfClients: %d\n", pGame->nrOfClients);
                 break;
         }
         //SDL_Delay(1000/60-15);//might work when you run on different processors
     }
     SDL_RemoveTimer(timerID);
+}
+
+void renderLobby(Game *pGame){
+    SDL_RenderClear(pGame->pRenderer);
+
+    char lobbyString[50];
+    char hostSpotString[50];
+    char spot1String[50];
+    char spot2String[50];
+    char spot3String[50];
+    char spot4String[50];
+
+    snprintf(lobbyString, sizeof(lobbyString), "Lobby");
+    
+
+    if(pGame->connected[0] == true) {
+        snprintf(hostSpotString, sizeof(hostSpotString), "Connection established");
+        snprintf(spot1String, sizeof(spot1String), "Player 1 is connected");
+    } else {
+        snprintf(hostSpotString, sizeof(hostSpotString), "Waiting for players...");
+        snprintf(spot1String, sizeof(spot1String), "Spot 1 is available");
+    }
+    if(pGame->connected[1] == true) {
+        snprintf(spot2String, sizeof(spot2String), "Player 2 is connected");
+    } else {
+        snprintf(spot2String, sizeof(spot2String), "Spot 2 is available");
+    }
+    if(pGame->connected[2] == true) {
+        snprintf(spot3String, sizeof(spot3String), "Player 3 is connected");
+    } else {
+        snprintf(spot3String, sizeof(spot3String), "Spot 3 is available");
+    }
+    if(pGame->connected[3] == true) {
+        snprintf(spot4String, sizeof(spot4String), "Player 4 is connected");
+    } else {
+        snprintf(spot4String, sizeof(spot4String), "Spot 4 is available");
+    }
+
+    pGame->pLobbyText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, lobbyString, WINDOW_WIDTH/2, 100);
+    pGame->pHostSpotText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, hostSpotString, WINDOW_WIDTH/2, 200);
+    pGame->pSpot1Text = createText(pGame->pRenderer, 250, 220, 198, pGame->pLobbyFont, spot1String, WINDOW_WIDTH/2, 300);
+    pGame->pSpot2Text = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, spot2String, WINDOW_WIDTH/2, 350);
+    pGame->pSpot3Text = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, spot3String, WINDOW_WIDTH/2, 400);
+    pGame->pSpot4Text = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, spot4String, WINDOW_WIDTH/2, 450);
+
+    drawText(pGame->pLobbyText);
+    drawText(pGame->pHostSpotText);
+    drawText(pGame->pSpot1Text);
+    drawText(pGame->pSpot2Text);
+    drawText(pGame->pSpot3Text);
+    drawText(pGame->pSpot4Text);
+    destroyText(pGame->pHostSpotText);
+    destroyText(pGame->pSpot1Text);
+    destroyText(pGame->pSpot2Text);
+    destroyText(pGame->pSpot3Text);
+    destroyText(pGame->pSpot4Text);
+    destroyText(pGame->pLobbyText);
+    
+    SDL_RenderPresent(pGame->pRenderer);
 }
 
 void renderGame(Game *pGame) {
@@ -328,6 +390,10 @@ void sendGameData(Game *pGame){
     for(int i=0;i<MAX_PLAYERS;i++){
         getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
     }
+    for (int i = 0; i < pGame->nrOfPlayers; i++)
+    {
+        pGame->sData.connected[i] = pGame->connected[i];
+    }
     getBallSendData(pGame->pBall, &(pGame->sData.ball));
     for(int i=0;i<MAX_PLAYERS;i++){
         pGame->sData.clientNr = i;
@@ -338,10 +404,15 @@ void sendGameData(Game *pGame){
     }
 }
 
-void add(IPaddress address, IPaddress clients[],int *pNrOfClients){
-	for(int i=0;i<*pNrOfClients;i++) if(address.host==clients[i].host &&address.port==clients[i].port) return;
-	clients[*pNrOfClients] = address;
-	(*pNrOfClients)++;
+void add(IPaddress address, IPaddress clients[], int *pNrOfClients, bool connected[]){
+    for(int i=0; i<*pNrOfClients; i++) {
+        if(address.host==clients[i].host && address.port==clients[i].port) {
+            return;
+        }
+    }
+    clients[*pNrOfClients] = address;
+    connected[*pNrOfClients] = true;
+    (*pNrOfClients)++;
 }
 
 void executeCommand(Game *pGame,ClientData cData){
@@ -379,7 +450,6 @@ Uint32 decreaseMatchTime(Uint32 interval, void *param) {
     return interval;
 }
 
-
 void closeGame(Game *pGame){
     for (int i = 0; i < MAX_PLAYERS; i++) {
         if (pGame->pPlayer[i]) {
@@ -390,8 +460,13 @@ void closeGame(Game *pGame){
     if (pGame->pPowerUpBox) destroyPowerCube(pGame->pPowerUpBox);
     if (pGame->pRenderer) SDL_DestroyRenderer(pGame->pRenderer);
     if (pGame->pWindow) SDL_DestroyWindow(pGame->pWindow);
-  
-    if(pGame->pWaitingText) destroyText(pGame->pWaitingText); 
+
+    if(pGame->pLobbyText) destroyText(pGame->pLobbyText);
+    if(pGame->pSpot1Text) destroyText(pGame->pSpot1Text);
+    if(pGame->pSpot2Text) destroyText(pGame->pSpot2Text);
+    if(pGame->pSpot3Text) destroyText(pGame->pSpot3Text);
+    if(pGame->pSpot4Text) destroyText(pGame->pSpot4Text);
+    if(pGame->pHostSpotText) destroyText(pGame->pHostSpotText);
     if(pGame->pOverText) destroyText(pGame->pOverText); 
     if(pGame->pMatchTimerText) destroyText(pGame->pMatchTimerText);
     if(pGame->pGoalsTextTeamA) destroyText(pGame->pGoalsTextTeamA);
