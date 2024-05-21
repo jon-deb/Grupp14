@@ -3,7 +3,9 @@
 
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
-#define MAX_PLAYERS 2
+#define MAX_PLAYERS 4
+
+#include <stdbool.h>
 
 enum gameState{START, ONGOING, GAME_OVER};
 typedef enum gameState GameState;
@@ -35,6 +37,7 @@ typedef struct serverData{
     BallData ball;
     int clientNr;
     GameState gState;
+    bool connected[MAX_PLAYERS];
 } ServerData;
 
 #endif
