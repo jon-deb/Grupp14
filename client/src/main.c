@@ -228,6 +228,7 @@ void run(Game *pGame) {
                 for (int i = 0; i < pGame->nrOfPlayers - 1; i++) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
                         handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
+                        freezeEnemyPlayer(pGame->pPlayer[i], pGame->pPlayer[j]);
                     }
                 }
                 for (int i=0; i<pGame->nrOfPlayers; i++) {
@@ -237,7 +238,7 @@ void run(Game *pGame) {
                     if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
                         updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect); 
                         int powerUpValue = rand()%NR_OF_POWERUPS;
-                        assignPowerUp(/*powerUpValue*/1, pGame->pPlayer[i]);
+                        assignPowerUp(powerUpValue, pGame->pPlayer[i]);
                     }   
                 }
 
@@ -245,14 +246,14 @@ void run(Game *pGame) {
                     restrictBallWithinWindow(pGame->pBall);
                 }
                 else {
-                        for(int i = 0; i < pGame->nrOfPlayers; i++)
-                            setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-                    //false if team left (A) scored and true if team right (B) scored
-                        if (!goalScored(pGame->pBall)) {
-                            pGame->teamA++;
-                        } else if (goalScored) {
-                            pGame->teamB++;
-                        }
+                    for(int i = 0; i < pGame->nrOfPlayers; i++) 
+                        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+                //false if team left (A) scored and true if team right (B) scored
+                    if (!goalScored(pGame->pBall)) {
+                        pGame->teamA++;
+                    } else if (goalScored) {
+                        pGame->teamB++;
+                    }
                 }
                 renderGame(pGame);
 
