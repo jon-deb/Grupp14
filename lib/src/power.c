@@ -75,7 +75,7 @@ void renderPowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer) {
 }
 
 void updatePowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer, SDL_Rect playerRect) {
-    if(pPowerUpBox->visible/*&& checkCollision(playerRect, power->rect)*/) {
+    if(pPowerUpBox->visible) {
         pPowerUpBox->visible = false;
         if(pPowerUpBox->restartTimerID) SDL_RemoveTimer(pPowerUpBox->restartTimerID);
         pPowerUpBox->restartTimerID = SDL_AddTimer(2000, respawnPowerCubeCallback, pPowerUpBox); // Respawn after 10 seconds (set to 10000)

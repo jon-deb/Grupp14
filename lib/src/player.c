@@ -44,7 +44,7 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
     pPlayer->team = playerIndex % 2; //for use with assigning powerups
     pPlayer->activePower = NO_POWERUP;
     pPlayer->speedMultiplier = 1;
-    pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer); //testa att kommentera bort innan push
+    pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer);
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
@@ -71,15 +71,11 @@ void assignPowerUp(int powerUpValue, Player *pPlayer) {
     pPlayer->powerUpTimer = SDL_AddTimer(3000, removePowerUp, pPlayer);
 }
 
-void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) { //kan säkert göras snyggare...
+void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) {
     if(pPlayer1->team != pPlayer2->team) {
-        PowerUp currentPower = pPlayer1->activePower;
-        if(currentPower == FREEZE) {
-            assignPowerUp(FROZEN, pPlayer2); //player2 state is now frozen
-            return;
-        }
-        currentPower = pPlayer2->activePower;
-        if(currentPower == FREEZE) assignPowerUp(FROZEN, pPlayer1); //player1 state is now frozen
+        if(getCurrentPowerUp(pPlayer1) == FREEZE) assignPowerUp(FROZEN, pPlayer2);
+    
+        else if(getCurrentPowerUp(pPlayer2) == FREEZE) assignPowerUp(FROZEN, pPlayer1);
     }
 }
 
