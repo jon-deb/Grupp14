@@ -250,6 +250,7 @@ void run(Game *pGame){
                         pGame->teamB++;
                     }
                }
+                applyFriction(pGame->pBall);
                 renderGame(pGame);
                 
                 break;
