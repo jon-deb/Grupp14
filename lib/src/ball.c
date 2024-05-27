@@ -23,7 +23,7 @@ typedef struct ball {
     SDL_Rect rect;
     SDL_Surface *surface;
     float velocityX, velocityY;
-    bool collided;
+    bool collided; //används ens den här?
 } Ball;
 
 Ball *createBall(SDL_Renderer *renderer) {
