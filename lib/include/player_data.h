@@ -3,7 +3,7 @@
 
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
-#define MAX_PLAYERS 2
+#define MAX_PLAYERS 4
 
 enum gameState{START, ONGOING, GAME_OVER};
 typedef enum gameState GameState;
