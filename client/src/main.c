@@ -32,7 +32,7 @@ typedef struct game {
     SDL_Texture *backgroundTexture;
     TTF_Font *pFont, *pScoreboardFont, *pLobbyFont;
 
-    Text *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText, *pPowerUpText[NR_OF_POWERUPS];
+    Text *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText, *pPowerUpText[NR_OF_POWERUPS], *pInputText;
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     PowerUpBox *pPowerUpBox;
@@ -195,6 +195,14 @@ void run(Game *pGame) {
     SDL_TimerID timerID = 0;
     int joining = 0;
     pGame->hostConnected = 0;
+
+    SDL_COLOR textColor = {0,0,0,0xFF};
+
+    char inputText[256] = "Some Text";
+    pGame->pInputText = createText(pGame->pRenderer, 0, 0, 0, pGame->pFont, inputText, WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
+    drawText(pGame->pInputText);
+
+    SDL_StartTextInput();
 
     while (!close_requested) {
         switch(pGame->state) 
