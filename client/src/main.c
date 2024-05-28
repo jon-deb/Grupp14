@@ -462,10 +462,11 @@ void closeGame(Game *pGame) {
 }
 
 void resetGame(Game *pGame) {
-    pGame->matchTime = 30000;
+    pGame->matchTime = 3000;
     pGame->teamA = 0;
     pGame->teamB = 0;
-    for (int i = 0; i < MAX_PLAYERS; i++) {
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        
         setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
     }
     pGame->state = START;

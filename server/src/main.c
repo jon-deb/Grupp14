@@ -59,6 +59,7 @@ Uint32 decreaseMatchTime(Uint32 interval, void *param);
 
 void setUpGame(Game *pGame);
 void closeGame(Game *pGame);
+void resetGame(Game *pGame);
 
 int main(int argv, char** args){
     Game g={0};
@@ -257,6 +258,9 @@ void run(Game *pGame){
                 drawText(pGame->pOverText);
                 sendGameData(pGame);
                 if(pGame->nrOfClients==MAX_PLAYERS) pGame->nrOfClients = 0;
+                else if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                        resetGame(pGame);
+                    }
             case START:
                 renderLobby(pGame);
                 SDL_RenderPresent(pGame->pRenderer);
@@ -477,4 +481,15 @@ void closeGame(Game *pGame){
     SDLNet_Quit();
     TTF_Quit();
     SDL_Quit();
+}
+
+
+void resetGame(Game *pGame) {
+    pGame->matchTime = 3000;
+    pGame->teamA = 0;
+    pGame->teamB = 0;
+    for (int i = 0; i < pGame->nrOfPlayers; i++) {
+        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+    }
+    pGame->state = START;
 }
