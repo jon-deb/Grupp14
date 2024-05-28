@@ -12,7 +12,7 @@
 #define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
 #define MOVEMENT_SPEED 200
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
-#define FRICTION_COEFFICIENT 0.97f
+#define FRICTION_COEFFICIENT 0.94f
 #define BALL_SPEED_AFTER_COLLISION 500
 #define GOAL_TOP 357 //distance from top of window to northern goal post
 #define GOAL_BOTTOM 522 //distance from top of window to southern goal post
@@ -23,7 +23,6 @@ struct ball {
     SDL_Rect rect;
     SDL_Surface *surface;
     float velocityX, velocityY;
-    bool collided;
 };
 
 Ball *createBall(SDL_Renderer *renderer) {
@@ -54,7 +53,6 @@ Ball *createBall(SDL_Renderer *renderer) {
     pBall->rect.y = MIDDLE_OF_FIELD_Y - pBall->rect.h / 2; 
     pBall->velocityX = 0;
     pBall->velocityY = 0;
-    pBall->collided = false;
 
     return pBall;
 }
@@ -92,8 +90,8 @@ void applyFriction(Ball *pBall) { //ta bort vx och vy
     vx *= FRICTION_COEFFICIENT;
     vy *= FRICTION_COEFFICIENT;
 
-    if(vx <=100) pBall->velocityX = 0;
-    if(vy <=100) pBall->velocityY = 0;
+    if(vx <=145) pBall->velocityX = 0;
+    if(vy <=145) pBall->velocityY = 0;
 
     setBallVelocity(pBall, vx, vy);
 }
@@ -142,18 +140,18 @@ void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
 
         
         setBallVelocity(pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
-        collisionTimer = 1.0f; // 0.5 sekunder
+        collisionTimer = 1.2f; // 0.5 sekunder
     }
     
     //applyFriction(pBall);
     
     updateBallPosition(pBall);
     
-    /*collisionTimer -= 1.0f / 60.0f;
+    collisionTimer -= 1.0f / 60.0f;
     if (collisionTimer <= 0.0f) {
         setBallVelocity(pBall, 0, 0);
         collisionTimer = 0.0f;
-    }/**/
+    }
 }
 
 int checkCollision(SDL_Rect rect1, SDL_Rect rect2) {

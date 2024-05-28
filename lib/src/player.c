@@ -216,6 +216,7 @@ void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayer->playerVelocityY = pPlayerData->playerVelocityY;
     pPlayer->playerRect.y = pPlayerData->yPos;
     pPlayer->playerRect.x = pPlayerData->xPos;
+    //pPlayer->activePower = pPlayerData->activePower;
 }
 
 void destroyPlayer(Player *pPlayer) {

@@ -372,7 +372,7 @@ void handlePowerUpText(Game *pGame) {
         }*/
         drawText(pGame->pPowerUpText[1]);
     }
-    for(int i=0; i<NR_OF_POWERUPS; i++) destroyText(pGame->pPowerUpText[i]);
+    for(int i=0; i<NR_OF_POWERUPS; i++) if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent) {
