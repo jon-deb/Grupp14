@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 /*#include <windows.h>*/
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -14,6 +15,7 @@
 #include "player.h"
 #include "power.h"
 #include "text.h"
+
 
 #define WINDOW_WIDTH 1300
 #define WINDOW_HEIGHT 800
@@ -27,6 +29,7 @@
 
 typedef struct game {
     SDL_Window *pWindow;
+    SDL_Window *pTextWindow;
     SDL_Renderer *pRenderer;
     SDL_Surface *pBackgroundSurface;
     SDL_Texture *backgroundTexture;
@@ -51,9 +54,15 @@ typedef struct game {
     Uint32 matchTime;
 } Game;
 
-int initiate(Game *pGame);
-void run(Game *pGame);
-void renderGame(Game *pGame);
+typedef struct TextInput {
+    char *pString;
+    size_t size;
+    size_t length;
+} TextInput;
+
+int initiate(Game *pGame, TextInput *pTextInput);
+void run(Game *pGame, TextInput *pTextInput);
+void renderGame(Game *pGame, TextInput *pTextInput);
 void renderLobby(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
 
@@ -61,17 +70,22 @@ void updateWithServerData(Game *pGame);
 
 Uint32 decreaseMatchTime(Uint32 interval, void *param);
 
-void closeGame(Game *pGame);
+static int GrowText(TextInput *pTextInput, size_t new_size);
+static int AppendText(TextInput *pTextInput, char *pText_to_add);
+static void RemoveCharacter(TextInput *pTextInput);
+
+void closeGame(Game *pGame, TextInput *pTextInput);
 
 int main(int argc, char** argv) {
     Game g = {0};
-    if (!initiate(&g)) return 1;
-    run(&g);
-    closeGame(&g);
+    TextInput tp = {NULL, 0, 0};
+    if (!initiate(&g, &tp)) return 1;
+    run(&g, &tp);
+    closeGame(&g, &tp);
     return 0;
 }
 
-int initiate(Game *pGame) {
+int initiate(Game *pGame, TextInput *pTextInput) {
     srand(time(NULL));
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
         printf("Error: %s\n", SDL_GetError());
@@ -91,13 +105,13 @@ int initiate(Game *pGame) {
     pGame->pWindow = SDL_CreateWindow("client", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     if (!pGame->pWindow) {
         printf("Error: %s\n", SDL_GetError());
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;
     }
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
     if (!pGame->pRenderer) {
         printf("Error: %s\n", SDL_GetError());
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;    
     }
 
@@ -119,14 +133,14 @@ int initiate(Game *pGame) {
     pGame->pBackgroundSurface = IMG_Load("../lib/resources/field_v.3.png");
     if (!pGame->pBackgroundSurface) {
         printf("Error: %s\n", SDL_GetError());
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;    
     }
     pGame->backgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pGame->pBackgroundSurface);
     SDL_FreeSurface(pGame->pBackgroundSurface);
     if (!pGame->backgroundTexture) {
         printf("Error: %s\n", SDL_GetError());
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;    
     }
 
@@ -142,14 +156,14 @@ int initiate(Game *pGame) {
     pGame->pBall = createBall(pGame->pRenderer);
     if (!pGame->pBall) {
         printf("Error initializing the ball.\n");
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;
     }
 
     pGame->pPowerUpBox = createPower(pGame->pRenderer);
     if (!pGame->pPowerUpBox) {
         printf("Failed to initialize power cube.\n");
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;
     }
     spawnPowerCube(pGame->pPowerUpBox);
@@ -159,7 +173,7 @@ int initiate(Game *pGame) {
     pGame->pLobbyFont = TTF_OpenFont("../lib/resources/SnesItalic-1G9Be.ttf", 50);
     if(!pGame->pFont || !pGame->pScoreboardFont || !pGame->pLobbyFont){
         printf("Error: %s\n",TTF_GetError());
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
         return 0;
     }
 
@@ -172,20 +186,34 @@ int initiate(Game *pGame) {
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
             printf("Error: %s\n",SDL_GetError());
-            closeGame(pGame);
+            closeGame(pGame, pTextInput);
             return 0;
         }
     }
 
     pGame->state = START;
     pGame->matchTime = 300000;
+    
+    pGame->pTextWindow = SDL_CreateWindow("TextInput", 50, 50, 50, 50, SDL_WINDOW_SHOWN);
+	if (!pGame->pWindow) {
+        printf("Error: %s\n", SDL_GetError());
+        closeGame(pGame, pTextInput);
+        return 0;
+	}
+
     return 1;
 }
 
-void run(Game *pGame) {
+void run(Game *pGame, TextInput *pTextInput) {
     int close_requested = 0;
     SDL_Event event;
     ClientData cData;
+
+    TextInput TextInput = {NULL, 0, 0};
+    if (GrowText(pTextInput, 16)) {
+        SDL_Log("Failed to allocate memory for the text.\n");
+        closeGame(pGame, pTextInput);
+    }
 
     Uint32 lastTick = SDL_GetTicks();
     Uint32 currentTick;
@@ -252,7 +280,7 @@ void run(Game *pGame) {
                             pGame->teamB++;
                         }
                 }
-                renderGame(pGame);
+                renderGame(pGame, pTextInput);
 
                 break;
             case GAME_OVER:
@@ -274,9 +302,31 @@ void run(Game *pGame) {
                         cData.clientNumber=-1;
                         memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
 		                pGame->pPacket->len = sizeof(ClientData);
-                        for (int i = 0; i < 20; i++)
-                        {
+                        for (int i = 0; i < 20; i++) {
                             SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
+                        }
+                        if (event.type == SDL_TEXTINPUT) {
+                            if (AppendText(pTextInput, &event.text)) {
+                                close_requested = 1;
+                            }
+                            SDL_Log("%s", pTextInput->pString);
+                        }
+                        else if (event.type == SDL_KEYDOWN) {
+                            if (event.key.keysym.sym == SDLK_ESCAPE) {
+                                close_requested = 1;
+                            } else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                                if (pTextInput->length > 0) {
+                                    RemoveCharacter(pTextInput);
+                                    SDL_Log("%s", pTextInput->pString);
+                                }
+                            }                            
+                        }
+                        else if (event.type == SDL_KEYUP) {
+                            if (event.key.keysym.sym == SDLK_RETURN || event.key.keysym.sym == SDLK_KP_ENTER) {
+                                pTextInput->pString[0] = 0;
+                                pTextInput->length = 0;
+                                SDL_Log("-----------");
+                            }
                         }
                     }
                 }
@@ -361,7 +411,7 @@ void renderLobby(Game *pGame){
     SDL_RenderPresent(pGame->pRenderer);
 }
 
-void renderGame(Game *pGame) {
+void renderGame(Game *pGame, TextInput *pTextInput) {
     SDL_RenderClear(pGame->pRenderer);
     SDL_RenderCopy(pGame->pRenderer, pGame->backgroundTexture, NULL, NULL);
 
@@ -382,7 +432,7 @@ void renderGame(Game *pGame) {
     
     if(!pGame->pMatchTimerText || !pGame->pGoalsTextTeamA || !pGame->pGoalsTextTeamB){
         printf("Error: %s\n",SDL_GetError());
-        closeGame(pGame);
+        closeGame(pGame, pTextInput);
     } 
     
     drawText(pGame->pGoalsTextTeamA);
@@ -495,7 +545,55 @@ Uint32 decreaseMatchTime(Uint32 interval, void *param) {
     return interval;
 }
 
-void closeGame(Game *pGame) {
+static int GrowText(TextInput *pTextInput, size_t new_size) {
+    char *pNew_text;
+    pTextInput->size += new_size;
+
+    pNew_text = SDL_realloc(pTextInput->pString, pTextInput->size);
+    if (!pNew_text)
+    {
+        SDL_free(pTextInput->pString);
+        return 1;
+    }
+
+    pTextInput->pString = pNew_text;
+    return 0;
+}
+
+static int AppendText(TextInput *pTextInput, char *pText_to_add){
+    size_t tta_length = strlen(pText_to_add);
+
+    /* Check if the text (including the terminating zero) even fits into the allocated memory. */
+    if(pTextInput->size - pTextInput->length < tta_length + 1)
+    {
+        /* It doesn't fit. We have to allocate more memory. */
+		/* Let's give it some extra bytes in case it's a short text. */
+        size_t new_size = tta_length < 512 ? 512 : tta_length;
+        if(GrowText(pTextInput, new_size ))
+        {
+            SDL_Log("Out of memory\n");
+            return 1;
+        }
+    }
+
+    pTextInput->length = SDL_strlcat(pTextInput->pString, pText_to_add, pTextInput->size);
+
+    return 0;
+}
+
+static void RemoveCharacter(TextInput *pTextInput){
+    /* Removing multi-byte characters from the UTF-8 string. */
+    while(pTextInput->length && pTextInput->pString[pTextInput->length - 1] - 64){
+        pTextInput->length--;
+    }
+    if (pTextInput->length)
+    {
+        pTextInput->length--;
+    }
+    pTextInput->pString[pTextInput->length] = 0;
+}
+
+void closeGame(Game *pGame, TextInput *pTextInput) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
         if(pGame->pPlayer[i]) {
             destroyPlayer(pGame->pPlayer[i]);
@@ -521,6 +619,8 @@ void closeGame(Game *pGame) {
     for(int i=0; i<NR_OF_POWERUPS; i++) {
         if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
     }   
+
+    SDL_free(pTextInput->pString);
 
     SDLNet_Quit();
     TTF_Quit();
