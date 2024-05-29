@@ -75,7 +75,6 @@ int main(int argc, char** argv) {
 }
 
 int initiate(Game *pGame) {
-    //srand(time(NULL));
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
@@ -111,7 +110,7 @@ int initiate(Game *pGame) {
 	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
 		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
-	}*/
+	}
     if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
 		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
@@ -186,7 +185,7 @@ int initiate(Game *pGame) {
     }
 
     pGame->state = START;
-    pGame->matchTime = 3000;
+    pGame->matchTime = 300000;
     return 1;
 }
 void run(Game *pGame) {
@@ -209,20 +208,15 @@ void run(Game *pGame) {
 
         switch(pGame->state) {
             case ONGOING:
-                if(timerID == 0) {
-                    timerID = SDL_AddTimer(1000, decreaseMatchTime, pGame);
-                }
+                if(timerID == 0) timerID = SDL_AddTimer(1000, decreaseMatchTime, pGame);
 
                 while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
                     updateWithServerData(pGame);
                 }
 
                 while (SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT) {
-                        close_requested = 1;
-                    } else {
-                        handleInput(pGame, &event);
-                    }
+                    if(event.type == SDL_QUIT) close_requested = 1;
+                    else handleInput(pGame, &event);
                 }
 
                 for (int i = 0; i < MAX_PLAYERS; i++) {
@@ -234,7 +228,6 @@ void run(Game *pGame) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
                         handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
                         freezeEnemyPlayer(pGame->pPlayer[i], pGame->pPlayer[j]);
-                        //applyFriction(pGame->pBall);
                     }
                 }
 
@@ -268,62 +261,58 @@ void run(Game *pGame) {
             Uint32 gameOverStartTime = SDL_GetTicks();  // Registrera starttiden
 
             while (!close_requested) {
-            while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                close_requested = 1;
-            }
-        }
-
-       
-        if (SDL_GetTicks() - gameOverStartTime >= 5000) {
-            close_requested = 1;
-        }
-
-        if(pGame->teamA > pGame->teamB) {
-            SDL_RenderClear(pGame->pRenderer);
-            drawText(pGame->pOverTextA);
-            drawText(pGame->pOverTextD);
-            SDL_RenderPresent(pGame->pRenderer);  
-        } else if(pGame->teamB > pGame->teamA) {
-            SDL_RenderClear(pGame->pRenderer);
-            drawText(pGame->pOverTextB);
-            drawText(pGame->pOverTextD);
-            SDL_RenderPresent(pGame->pRenderer);
-        } else {
-            SDL_RenderClear(pGame->pRenderer);
-            drawText(pGame->pOverTextC);
-            drawText(pGame->pOverTextD);
-            SDL_RenderPresent(pGame->pRenderer);
-        }
-    }
-    
-        break;
-
-            case START:
-                renderLobby(pGame);
-                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
-                    pGame->hostConnected = 1;
-                    updateWithServerData(pGame);
-                }
-                if(SDL_PollEvent(&event)) {
-                    if(event.type == SDL_QUIT) {
+                while (SDL_PollEvent(&event)) {
+                    if (event.type == SDL_QUIT) {
                         close_requested = 1;
-                    } else if(!joining || pGame->hostConnected == 0) {
-                        joining = 1;
-                        cData.command = READY;
-                        cData.clientNumber = -1;
-                        memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
-                        pGame->pPacket->len = sizeof(ClientData);
-                        for (int i = 0; i < 20; i++) {
-                            SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
-                        }
                     }
                 }
-                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
-                    updateWithServerData(pGame);
-                    if(pGame->state == ONGOING) joining = 0;
+            }   
+       
+            if (SDL_GetTicks() - gameOverStartTime >= 5000)
+                close_requested = 1;
+
+            if(pGame->teamA > pGame->teamB) {
+                SDL_RenderClear(pGame->pRenderer);
+                drawText(pGame->pOverTextA);
+                drawText(pGame->pOverTextD);
+                SDL_RenderPresent(pGame->pRenderer);  
+            } else if(pGame->teamB > pGame->teamA) {
+                SDL_RenderClear(pGame->pRenderer);
+                drawText(pGame->pOverTextB);
+                drawText(pGame->pOverTextD);
+                SDL_RenderPresent(pGame->pRenderer);
+            } else {
+                SDL_RenderClear(pGame->pRenderer);
+                drawText(pGame->pOverTextC);
+                drawText(pGame->pOverTextD);
+                SDL_RenderPresent(pGame->pRenderer);
+            }
+            break;
+        case START:
+            renderLobby(pGame);
+            if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
+                pGame->hostConnected = 1;
+                updateWithServerData(pGame);
+            }
+            if(SDL_PollEvent(&event)) {
+                if(event.type == SDL_QUIT) {
+                    close_requested = 1;
+                } else if(!joining || pGame->hostConnected == 0) {
+                    joining = 1;
+                    cData.command = READY;
+                    cData.clientNumber = -1;
+                    memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
+                    pGame->pPacket->len = sizeof(ClientData);
+                    for (int i = 0; i < 20; i++) {
+                        SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
+                    }
                 }
-                break;
+            }
+            if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
+                updateWithServerData(pGame);
+                if(pGame->state == ONGOING) joining = 0;
+            }
+            break;
         }
     }
     SDL_RemoveTimer(timerID);

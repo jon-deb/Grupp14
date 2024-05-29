@@ -70,7 +70,6 @@ int main(int argv, char** args){
 }
 
 int initiate(Game *pGame){
-    //srand(time(NULL));
     if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
         return 0;
