@@ -175,7 +175,7 @@ int initiate(Game *pGame){
     for(int i = 0; i < MAX_PLAYERS; i++) {
         pGame->connected[i] = false;
     }
-    pGame->matchTime = 300000;
+    pGame->matchTime = 3000;
     
     return 1;
 }
@@ -197,9 +197,9 @@ void run(Game *pGame){
         switch (pGame->state)
         {
             case ONGOING:
-            if(timerID == 0) {
-               timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
-            }
+                if(timerID == 0) {
+                    timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
+                }
                 currentTick = SDL_GetTicks();
                 deltaTime = (currentTick - lastTick) / 1000.0f;
                 lastTick = currentTick;
@@ -237,10 +237,10 @@ void run(Game *pGame){
                     } 
                 }
 
-               if (!goal(pGame->pBall)) {
+                if (!goal(pGame->pBall)) {
                     restrictBallWithinWindow(pGame->pBall);
-               }
-               else {
+                }
+                else {
                     for(int i = 0; i < pGame->nrOfPlayers; i++)
                         setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
                 //false if team left (A) scored and true if team right (B) scored
@@ -249,14 +249,20 @@ void run(Game *pGame){
                     } else if (goalScored) {
                         pGame->teamB++;
                     }
-               }
+                }
                 renderGame(pGame);
-                
+                printf("Ongoing\n");
                 break;
             case GAME_OVER:
+                SDL_RenderClear(pGame->pRenderer);
+                pGame->pOverText = createText(pGame->pRenderer, 227, 220, 198, pGame->pFont, "Game Over", WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
                 drawText(pGame->pOverText);
-                sendGameData(pGame);
-                if(pGame->nrOfClients==MAX_PLAYERS) pGame->nrOfClients = 0;
+                /*if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                        
+                    }*/
+                SDL_RenderPresent(pGame->pRenderer);
+                printf("Game Over\n");
+                break;
             case START:
                 renderLobby(pGame);
                 SDL_RenderPresent(pGame->pRenderer);
@@ -267,6 +273,7 @@ void run(Game *pGame){
                 }
                 sendGameData(pGame);
                 printf("nrOfClients: %d\n", pGame->nrOfClients);
+                printf("Start\n");
                 break;
         }
         //SDL_Delay(1000/60-15);//might work when you run on different processors
@@ -443,9 +450,11 @@ void executeCommand(Game *pGame,ClientData cData){
 }
 
 Uint32 decreaseMatchTime(Uint32 interval, void *param) {
-    Uint32 *pMatchTime = (Uint32 *)param;
-    if (*pMatchTime > 0) {
-        *pMatchTime -= 1000;
+    Game *pGame = (Game *)param;
+    if (pGame->matchTime > 0) {
+        pGame->matchTime -= 1000;
+    } else {
+        pGame->state = GAME_OVER;
     }
     return interval;
 }

@@ -178,7 +178,7 @@ int initiate(Game *pGame) {
     }
 
     pGame->state = START;
-    pGame->matchTime = 3000;
+    pGame->matchTime = 300000;
     return 1;
 }
 void run(Game *pGame) {
@@ -253,14 +253,17 @@ void run(Game *pGame) {
                 }
                 renderGame(pGame);
                 break;
-
             case GAME_OVER:
                 while (SDL_PollEvent(&event)) {
                     if (event.type == SDL_QUIT) {
                         close_requested = 1;
                     } else if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                        pGame->teamA = 0;
+                        pGame->teamB = 0;
+                        pGame->nrOfPlayers = 0;
+                        joining = 0;
                         pGame->state = START;
-                        pGame->matchTime = 3000; // Reset match time
+                        pGame->matchTime = 300000; // Reset match time
                         // Reset other game variables if needed
                     }
                 }
@@ -268,7 +271,6 @@ void run(Game *pGame) {
                 drawText(pGame->pOverText);
                 SDL_RenderPresent(pGame->pRenderer);
                 break;
-
             case START:
                 renderLobby(pGame);
                 if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
