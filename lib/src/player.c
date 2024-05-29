@@ -26,7 +26,6 @@ struct player {
     SDL_TimerID powerUpTimer;
     SDL_Texture *playerTexture;
     SDL_Rect playerRect;
-    //SDL_Renderer *pGameRenderer; maybe add
 };
 
 Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex) {
@@ -144,20 +143,17 @@ void setPlayerPosition(Player *pPlayer, int x, int y) {
 void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h) {
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
-    switch(playerIndex) { //x(w) ligg, y(h) stå
+    switch(playerIndex) {
         case 0: pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2;
                 pPlayer->playerRect.y = h/ 2;
         break;
         case 1: pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2 + (w/2);
-                //pPlayer->playerRect.x += w/2; 
                 pPlayer->playerRect.y = h/ 2;
         break;
         case 2: pPlayer->playerRect.x = w / 5 - pPlayer->playerRect.w / 2;
-                //pPlayer->playerRect.x += w/2; 
                 pPlayer->playerRect.y = h / 3;
         break;
         case 3: pPlayer->playerRect.x = w - (w/5);
-                //pPlayer->playerRect.x += w/3;
                 pPlayer->playerRect.y = h / 3;
         break;
         

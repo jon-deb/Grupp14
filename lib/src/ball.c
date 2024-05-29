@@ -17,7 +17,6 @@
 #define GOAL_TOP 357 //distance from top of window to northern goal post
 #define GOAL_BOTTOM 522 //distance from top of window to southern goal post
 
-
 struct ball {
     SDL_Texture *texture;
     SDL_Rect rect;
