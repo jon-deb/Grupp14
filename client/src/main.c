@@ -63,6 +63,7 @@ void updateWithServerData(Game *pGame);
 
 Uint32 decreaseMatchTime(Uint32 interval, void *param);
 
+void handleGameOverText(Game *pGame);
 void closeGame(Game *pGame);
 
 int main(int argc, char** argv) {
@@ -105,10 +106,6 @@ int initiate(Game *pGame) {
 
     if (!(pGame->pSocket = SDLNet_UDP_Open(0))) {//0 means not a server
 		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-		return 0;
-	}
-	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
-		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
 	}
     if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
@@ -172,17 +169,10 @@ int initiate(Game *pGame) {
     pGame->pOverTextB = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Team B Won!\n", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     pGame->pOverTextC = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Game Draw!", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     pGame->pOverTextD = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Closing in 5 sec...", WINDOW_WIDTH /2, WINDOW_HEIGHT / 2+100);
+    
     pGame->teamA = 0;
     pGame->teamB = 0;
     pGame->powerUpValue = 0;
-
-    for(int i=0;i<MAX_PLAYERS;i++){
-        if(!pGame->pPlayer[i]){
-            printf("Error: %s\n",SDL_GetError());
-            closeGame(pGame);
-            return 0;
-        }
-    }
 
     pGame->state = START;
     pGame->matchTime = 300000;
@@ -202,14 +192,13 @@ void run(Game *pGame) {
     pGame->hostConnected = 0;
 
     while (!close_requested) {
-        currentTick = SDL_GetTicks();
-        deltaTime = (currentTick - lastTick) / 1000.0f;
-        lastTick = currentTick;
-
         switch(pGame->state) {
             case ONGOING:
                 if(timerID == 0) timerID = SDL_AddTimer(1000, decreaseMatchTime, pGame);
 
+                //currentTick = SDL_GetTicks();
+                deltaTime = (currentTick - lastTick) / 1000.0f;
+                lastTick = currentTick;
                 while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
                     updateWithServerData(pGame);
                 }
@@ -258,34 +247,15 @@ void run(Game *pGame) {
                 break;
 
         case GAME_OVER:
-            Uint32 gameOverStartTime = SDL_GetTicks();  // Registrera starttiden
-
+            Uint32 gameOverStartTime = SDL_GetTicks();
+            handleGameOverText(pGame);
             while (!close_requested) {
                 while (SDL_PollEvent(&event)) {
-                    if (event.type == SDL_QUIT) {
+                    if (event.type == SDL_QUIT || SDL_GetTicks() - gameOverStartTime >= 5000) {
                         close_requested = 1;
+                        closeGame(pGame);
                     }
                 }
-            }   
-       
-            if (SDL_GetTicks() - gameOverStartTime >= 5000)
-                close_requested = 1;
-
-            if(pGame->teamA > pGame->teamB) {
-                SDL_RenderClear(pGame->pRenderer);
-                drawText(pGame->pOverTextA);
-                drawText(pGame->pOverTextD);
-                SDL_RenderPresent(pGame->pRenderer);  
-            } else if(pGame->teamB > pGame->teamA) {
-                SDL_RenderClear(pGame->pRenderer);
-                drawText(pGame->pOverTextB);
-                drawText(pGame->pOverTextD);
-                SDL_RenderPresent(pGame->pRenderer);
-            } else {
-                SDL_RenderClear(pGame->pRenderer);
-                drawText(pGame->pOverTextC);
-                drawText(pGame->pOverTextD);
-                SDL_RenderPresent(pGame->pRenderer);
             }
             break;
         case START:
@@ -530,6 +500,25 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
     }
 }
 
+void handleGameOverText(Game *pGame) {
+    if(pGame->teamA > pGame->teamB) {
+        SDL_RenderClear(pGame->pRenderer);
+        drawText(pGame->pOverTextA);
+        drawText(pGame->pOverTextD);
+        SDL_RenderPresent(pGame->pRenderer);  
+    } else if(pGame->teamB > pGame->teamA) {
+        SDL_RenderClear(pGame->pRenderer);
+        drawText(pGame->pOverTextB);
+        drawText(pGame->pOverTextD);
+        SDL_RenderPresent(pGame->pRenderer);
+    } else {
+        SDL_RenderClear(pGame->pRenderer);
+        drawText(pGame->pOverTextC);
+        drawText(pGame->pOverTextD);
+        SDL_RenderPresent(pGame->pRenderer);
+    }
+}
+
 Uint32 decreaseMatchTime(Uint32 interval, void *param) {
     Game *pGame = (Game *)param;
     if (pGame->matchTime > 0) {
@@ -565,7 +554,8 @@ void closeGame(Game *pGame) {
     if(pGame->pMatchTimerText) destroyText(pGame->pMatchTimerText);
     if(pGame->pGoalsTextTeamA) destroyText(pGame->pGoalsTextTeamA);
     if(pGame->pGoalsTextTeamB) destroyText(pGame->pGoalsTextTeamB);
-    for(int i=0; i<NR_OF_POWERUPS; i++) destroyText(pGame->pPowerUpText[i]);
+    for(int i=0; i<NR_OF_POWERUPS; i++) 
+        if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
     if(pGame->pFont) TTF_CloseFont(pGame->pFont);
     if(pGame->pScoreboardFont) TTF_CloseFont(pGame->pScoreboardFont);
 

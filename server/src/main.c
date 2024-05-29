@@ -162,14 +162,6 @@ int initiate(Game *pGame){
     pGame->teamA = 0;
     pGame->teamB = 0;
 
-    for(int i=0;i<MAX_PLAYERS;i++){
-        if(!pGame->pPlayer[i]){
-            printf("Error: %s\n",SDL_GetError());
-            closeGame(pGame);
-            return 0;
-        }
-    }
-
     pGame->state = START;
     pGame->nrOfClients = 0;
     for(int i = 0; i < MAX_PLAYERS; i++) {
