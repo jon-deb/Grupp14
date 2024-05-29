@@ -12,7 +12,6 @@
 #define POWER_WINDOW_Y1 114 //distance from top of window to top of field
 #define POWER_WINDOW_Y2 765 //distance from top of window to bottom of field
 
-
 struct powerUpBox {
     SDL_Texture *texture;
     SDL_Rect rect;
