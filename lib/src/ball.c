@@ -83,23 +83,13 @@ void setBallY(Ball *pBall, int y) {
     pBall->rect.y = y;
 }
 
-void applyFriction(Ball *pBall) { //ta bort vx och vy
 void applyFriction(Ball *pBall) {
-    /*//gamla koden:
-    float vx = pBall->velocityX;
-    float vy = pBall->velocityY;
-    // sänker hastigheten 
-    vx *= FRICTION_COEFFICIENT;
-    vy *= FRICTION_COEFFICIENT;
-
+    float vx = pBall->velocityX * FRICTION_COEFFICIENT;
+    float vy = pBall->velocityY * FRICTION_COEFFICIENT;
     if(vx <=145) pBall->velocityX = 0;
     if(vy <=145) pBall->velocityY = 0;
     
-    setBallVelocity(pBall, vx, vy);*/
-
-    //nya koden
-    pBall->velocityX *= FRICTION_COEFFICIENT;
-    pBall->velocityY *= FRICTION_COEFFICIENT;
+    setBallVelocity(pBall, vx, vy);
 }
 
 void restrictBallWithinWindow(Ball *pBall) {
@@ -146,10 +136,8 @@ void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
 
         
         setBallVelocity(pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
-        collisionTimer = 1.2f; // 0.5 sekunder
+        collisionTimer = 1.2f; // 0.6 sekunder
     }
-    
-    //applyFriction(pBall);
     
     updateBallPosition(pBall);
     

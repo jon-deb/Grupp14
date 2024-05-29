@@ -29,13 +29,13 @@ typedef struct ballData{
 typedef struct playerData{
     float playerVelocityX, playerVelocityY;
     int xPos, yPos;
-    //PowerUp power;
+    PowerUp activePower;
 } PlayerData;   
 
 typedef struct serverData{
     PlayerData players[MAX_PLAYERS];
     BallData ball;
-    int clientNr;
+    int clientNr, powerUpValue;
     GameState gState;
     bool connected[MAX_PLAYERS];
 } ServerData;
