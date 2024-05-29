@@ -105,8 +105,8 @@ int initiate(Game *pGame) {
 		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
 		return 0;
 	}
-	if (SDLNet_ResolveHost(&(pGame->serverAddress), "10.242.136.87", 2000)) {
-		printf("SDLNet_ResolveHost(10.242.136.87 2000): %s\n", SDLNet_GetError());
+	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
+		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
 	}
     if (!(pGame->pPacket = SDLNet_AllocPacket(512))) {
@@ -165,7 +165,7 @@ int initiate(Game *pGame) {
 
     pGame->pPowerUpText[0] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Speed increased",WINDOW_WIDTH,WINDOW_HEIGHT-200); //random värden, testar bara
     pGame->pPowerUpText[1] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"FROZEN",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-
+    pGame->pOverText = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Game Over! Press space to restart", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     pGame->teamA = 0;
     pGame->teamB = 0;
 
@@ -178,10 +178,9 @@ int initiate(Game *pGame) {
     }
 
     pGame->state = START;
-    pGame->matchTime = 300000;
+    pGame->matchTime = 3000;
     return 1;
 }
-
 void run(Game *pGame) {
     int close_requested = 0;
     SDL_Event event;
@@ -191,22 +190,22 @@ void run(Game *pGame) {
     Uint32 currentTick;
     currentTick = SDL_GetTicks();
     float deltaTime;
-    //SDL_TimerID timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
     SDL_TimerID timerID = 0;
     int joining = 0;
     pGame->hostConnected = 0;
 
     while (!close_requested) {
-        switch(pGame->state) 
-        {
-            case ONGOING:   
-            if(timerID == 0) {
-               timerID = SDL_AddTimer(1000, decreaseMatchTime, &(pGame->matchTime));
-            }
-                deltaTime = (currentTick - lastTick) / 1000.0f;
-                lastTick = currentTick;
+        currentTick = SDL_GetTicks();
+        deltaTime = (currentTick - lastTick) / 1000.0f;
+        lastTick = currentTick;
 
-                while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
+        switch(pGame->state) {
+            case ONGOING:
+                if(timerID == 0) {
+                    timerID = SDL_AddTimer(1000, decreaseMatchTime, pGame);
+                }
+
+                while(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
                     updateWithServerData(pGame);
                 }
 
@@ -218,81 +217,88 @@ void run(Game *pGame) {
                     }
                 }
 
-                for (int i = 0; i < MAX_PLAYERS; i++)
-                {
+                for (int i = 0; i < MAX_PLAYERS; i++) {
                     updatePlayerPosition(pGame->pPlayer[i], deltaTime);
                     restrictPlayerWithinWindow(pGame->pPlayer[i], WINDOW_WIDTH, WINDOW_HEIGHT);
                 }
+
                 for (int i = 0; i < pGame->nrOfPlayers - 1; i++) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
                         handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
                     }
                 }
-                for (int i=0; i<pGame->nrOfPlayers; i++) {
+
+                for (int i = 0; i < pGame->nrOfPlayers; i++) {
                     SDL_Rect playerRect = getPlayerRect(pGame->pPlayer[i]);
                     SDL_Rect ballRect = getBallRect(pGame->pBall);
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                     if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
-                        updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect); 
-                        int powerUpValue = rand()%NR_OF_POWERUPS;
+                        updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect);
+                        int powerUpValue = rand() % NR_OF_POWERUPS;
                         assignPowerUp(/*powerUpValue*/1, pGame->pPlayer[i]);
-                    }   
+                    }
                 }
 
                 if (!goal(pGame->pBall)) {
                     restrictBallWithinWindow(pGame->pBall);
-                }
-                else {
-                        for(int i = 0; i < pGame->nrOfPlayers; i++)
-                            setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
-                    //false if team left (A) scored and true if team right (B) scored
-                        if (!goalScored(pGame->pBall)) {
-                            pGame->teamA++;
-                        } else if (goalScored) {
-                            pGame->teamB++;
-                        }
+                } else {
+                    for(int i = 0; i < pGame->nrOfPlayers; i++)
+                        setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+                    if (!goalScored(pGame->pBall)) {
+                        pGame->teamA++;
+                    } else {
+                        pGame->teamB++;
+                    }
                 }
                 renderGame(pGame);
+                break;
 
-                break;
             case GAME_OVER:
+                while (SDL_PollEvent(&event)) {
+                    if (event.type == SDL_QUIT) {
+                        close_requested = 1;
+                    } else if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                        pGame->state = START;
+                        pGame->matchTime = 3000; // Reset match time
+                        // Reset other game variables if needed
+                    }
+                }
+                SDL_RenderClear(pGame->pRenderer);
                 drawText(pGame->pOverText);
+                SDL_RenderPresent(pGame->pRenderer);
                 break;
+
             case START:
                 renderLobby(pGame);
-                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
+                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
                     pGame->hostConnected = 1;
                     updateWithServerData(pGame);
                 }
-                if(SDL_PollEvent(&event)){
-                    if(event.type==SDL_QUIT){
+                if(SDL_PollEvent(&event)) {
+                    if(event.type == SDL_QUIT) {
                         close_requested = 1;
-                    }
-                    else if(!joining || pGame->hostConnected == 0){
+                    } else if(!joining || pGame->hostConnected == 0) {
                         joining = 1;
-                        cData.command=READY;
-                        cData.clientNumber=-1;
+                        cData.command = READY;
+                        cData.clientNumber = -1;
                         memcpy(pGame->pPacket->data, &cData, sizeof(ClientData));
-		                pGame->pPacket->len = sizeof(ClientData);
-                        for (int i = 0; i < 20; i++)
-                        {
+                        pGame->pPacket->len = sizeof(ClientData);
+                        for (int i = 0; i < 20; i++) {
                             SDLNet_UDP_Send(pGame->pSocket, -1, pGame->pPacket);
                         }
                     }
                 }
-                //if(joining){
-                 //   SDLNet_UDP_Send(pGame->pSocket, -1,pGame->pPacket);
-                //}
-                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)){
+                if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
                     updateWithServerData(pGame);
                     if(pGame->state == ONGOING) joining = 0;
-                }                
+                }
                 break;
         }
-                //SDL_Delay(1000/60-15);//might work when you run on different processors
     }
     SDL_RemoveTimer(timerID);
 }
+
 
 void renderLobby(Game *pGame){
     SDL_RenderClear(pGame->pRenderer);
@@ -488,12 +494,15 @@ void handleInput(Game *pGame, SDL_Event *pEvent) {
 }
 
 Uint32 decreaseMatchTime(Uint32 interval, void *param) {
-    Uint32 *pMatchTime = (Uint32 *)param;
-    if (*pMatchTime > 0) {
-        *pMatchTime -= 1000;
+    Game *pGame = (Game *)param;
+    if (pGame->matchTime > 0) {
+        pGame->matchTime -= 1000;
+    } else {
+        pGame->state = GAME_OVER;
     }
     return interval;
 }
+
 
 void closeGame(Game *pGame) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
