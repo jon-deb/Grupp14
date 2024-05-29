@@ -43,7 +43,6 @@ PowerUpBox *createPower(SDL_Renderer *renderer) {
         return NULL;
     }
 
-    srand(500);
     pPowerUpBox->rect.w = 48;
     pPowerUpBox->rect.h = 48;
     pPowerUpBox->visible = false;
@@ -52,8 +51,8 @@ PowerUpBox *createPower(SDL_Renderer *renderer) {
 }
 
 void spawnPowerCube(PowerUpBox *pPowerUpBox) {
+    srand(500);
     if (!pPowerUpBox) return;
-
     pPowerUpBox->rect.x = POWER_WINDOW_X1 + rand() % (POWER_WINDOW_X2 - POWER_WINDOW_X1 - pPowerUpBox->rect.w);
     pPowerUpBox->rect.y = POWER_WINDOW_Y1 + rand() % (POWER_WINDOW_Y2 - POWER_WINDOW_Y1 - pPowerUpBox->rect.h);
     pPowerUpBox->visible = true;
@@ -75,7 +74,7 @@ void renderPowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer) {
 }
 
 void updatePowerCube(PowerUpBox *pPowerUpBox, SDL_Renderer *renderer, SDL_Rect playerRect) {
-    if(pPowerUpBox->visible/*&& checkCollision(playerRect, power->rect)*/) {
+    if(pPowerUpBox->visible) {
         pPowerUpBox->visible = false;
         if(pPowerUpBox->restartTimerID) SDL_RemoveTimer(pPowerUpBox->restartTimerID);
         pPowerUpBox->restartTimerID = SDL_AddTimer(2000, respawnPowerCubeCallback, pPowerUpBox); // Respawn after 10 seconds (set to 10000)

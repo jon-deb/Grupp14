@@ -44,6 +44,7 @@ typedef struct game {
     int teamA;
     int teamB;
     int nrOfPlayers, playerNr;
+    int powerUpValue;
 
     UDPsocket pSocket;
 	IPaddress serverAddress;
@@ -56,6 +57,7 @@ void run(Game *pGame);
 void renderGame(Game *pGame);
 void renderLobby(Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent);
+void handlePowerUpText(Game *pGame);
 
 void updateWithServerData(Game *pGame);
 
@@ -66,13 +68,14 @@ void closeGame(Game *pGame);
 int main(int argc, char** argv) {
     Game g = {0};
     if (!initiate(&g)) return 1;
+    srand(500);
     run(&g);
     closeGame(&g);
     return 0;
 }
 
 int initiate(Game *pGame) {
-    srand(time(NULL));
+    //srand(time(NULL));
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return 0;
@@ -106,6 +109,10 @@ int initiate(Game *pGame) {
 		return 0;
 	}
 	if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
+		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
+		return 0;
+	}*/
+    if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
 		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
 	}
@@ -162,15 +169,13 @@ int initiate(Game *pGame) {
         closeGame(pGame);
         return 0;
     }
-
-    pGame->pPowerUpText[0] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Speed increased",WINDOW_WIDTH,WINDOW_HEIGHT-200); //random värden, testar bara
-    pGame->pPowerUpText[1] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"FROZEN",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
     pGame->pOverTextA = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Team A Won!", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     pGame->pOverTextB = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Team B Won!\n", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     pGame->pOverTextC = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Game Draw!", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     pGame->pOverTextD = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Closing in 5 sec...", WINDOW_WIDTH /2, WINDOW_HEIGHT / 2+100);
     pGame->teamA = 0;
     pGame->teamB = 0;
+    pGame->powerUpValue = 0;
 
     for(int i=0;i<MAX_PLAYERS;i++){
         if(!pGame->pPlayer[i]){
@@ -228,6 +233,8 @@ void run(Game *pGame) {
                 for (int i = 0; i < pGame->nrOfPlayers - 1; i++) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
                         handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
+                        freezeEnemyPlayer(pGame->pPlayer[i], pGame->pPlayer[j]);
+                        //applyFriction(pGame->pBall);
                     }
                 }
 
@@ -236,9 +243,8 @@ void run(Game *pGame) {
                     SDL_Rect ballRect = getBallRect(pGame->pBall);
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                     if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
-                        updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect);
-                        int powerUpValue = rand() % NR_OF_POWERUPS;
-                        assignPowerUp(/*powerUpValue*/1, pGame->pPlayer[i]);
+                        updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect); 
+                        assignPowerUp(pGame->powerUpValue, pGame->pPlayer[i]);
                     }
                 }
 
@@ -254,6 +260,7 @@ void run(Game *pGame) {
                         pGame->teamB++;
                     }
                 }
+                applyFriction(pGame->pBall);
                 renderGame(pGame);
                 break;
 
@@ -408,15 +415,15 @@ void renderGame(Game *pGame) {
     pGame->pMatchTimerText = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, timeString, 790, 64);
     pGame->pGoalsTextTeamA = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, goalsStringTeamA, 494, 64);
     pGame->pGoalsTextTeamB = createText(pGame->pRenderer, 227, 220, 198, pGame->pScoreboardFont, goalsStringTeamB, 542, 64); 
-    
+
     if(!pGame->pMatchTimerText || !pGame->pGoalsTextTeamA || !pGame->pGoalsTextTeamB){
         printf("Error: %s\n",SDL_GetError());
         closeGame(pGame);
     } 
-    
     drawText(pGame->pGoalsTextTeamA);
     drawText(pGame->pGoalsTextTeamB);
     drawText(pGame->pMatchTimerText);
+    handlePowerUpText(pGame);
     destroyText(pGame->pMatchTimerText);
     destroyText(pGame->pGoalsTextTeamA);
     destroyText(pGame->pGoalsTextTeamB);
@@ -441,6 +448,7 @@ void updateWithServerData(Game *pGame){
     memcpy(&sData, pGame->pPacket->data, sizeof(ServerData));
     pGame->playerNr = sData.clientNr;
     pGame->state = sData.gState;
+    pGame->powerUpValue = sData.powerUpValue;
     for(int i=0;i<MAX_PLAYERS;i++){
         updatePlayerWithRecievedData(pGame->pPlayer[i],&(sData.players[i]));
         pGame->connected[i] = sData.connected[i];
@@ -448,13 +456,30 @@ void updateWithServerData(Game *pGame){
     updateBallWithRecievedData(pGame->pBall,&(sData.ball));
 }
 
+void handlePowerUpText(Game *pGame) {
+    pGame->pPowerUpText[0] = createText(pGame->pRenderer,255,87,51,pGame->pFont,"FROZEN",WINDOW_WIDTH/2,WINDOW_HEIGHT-100);
+    pGame->pPowerUpText[1] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Speed increased!",WINDOW_WIDTH/2,WINDOW_HEIGHT-100); //random värden, testar bara
+    for(int i=0; i<NR_OF_POWERUPS; i++) {
+        if(!pGame->pPowerUpText[i]) {
+            printf("Error: %s\n",SDL_GetError());
+            closeGame(pGame);
+        }
+    }
+    if(getCurrentPowerUp(pGame->pPlayer[pGame->playerNr]) == FROZEN)
+        drawText(pGame->pPowerUpText[0]);
+    else if(getCurrentPowerUp(pGame->pPlayer[pGame->playerNr]) == SPEED_BOOST)
+        drawText(pGame->pPowerUpText[1]);
+
+    for(int i=0; i<NR_OF_POWERUPS; i++) {
+        if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
+    }
+}
+
 void handleInput(Game *pGame, SDL_Event *pEvent) {
     ClientData cData;
     cData.clientNumber = pGame->playerNr;
     
-    PowerUp currentPower;
-    currentPower = getCurrentPowerUp(pGame->pPlayer[pGame->playerNr]);
-    if(currentPower != FROZEN) {
+    if(getCurrentPowerUp(pGame->pPlayer[pGame->playerNr]) != FROZEN) {
         if (pEvent->type == SDL_KEYDOWN) {
             switch (pEvent->key.keysym.scancode) {
                 case SDL_SCANCODE_W:
@@ -551,11 +576,9 @@ void closeGame(Game *pGame) {
     if(pGame->pMatchTimerText) destroyText(pGame->pMatchTimerText);
     if(pGame->pGoalsTextTeamA) destroyText(pGame->pGoalsTextTeamA);
     if(pGame->pGoalsTextTeamB) destroyText(pGame->pGoalsTextTeamB);
+    for(int i=0; i<NR_OF_POWERUPS; i++) destroyText(pGame->pPowerUpText[i]);
     if(pGame->pFont) TTF_CloseFont(pGame->pFont);
     if(pGame->pScoreboardFont) TTF_CloseFont(pGame->pScoreboardFont);
-    for(int i=0; i<NR_OF_POWERUPS; i++) {
-        if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
-    }   
 
     SDLNet_Quit();
     TTF_Quit();

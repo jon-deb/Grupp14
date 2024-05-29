@@ -20,7 +20,7 @@
 
 struct player {
     float playerVelocityX, playerVelocityY, speedMultiplier;
-    int xPos, yPos;
+    int xPos, yPos, team;
     Ball *pBall;
     PowerUp activePower;
     SDL_TimerID powerUpTimer;
@@ -41,9 +41,10 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
 
     char imagePath[29];
     snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
+    pPlayer->team = playerIndex % 2; //for use with assigning powerups
     pPlayer->activePower = NO_POWERUP;
     pPlayer->speedMultiplier = 1;
-    //pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer); //testa att kommentera bort innan push
+    pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer);
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
@@ -63,21 +64,17 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
 }
 
 void assignPowerUp(int powerUpValue, Player *pPlayer) {
-    pPlayer->activePower = powerUpValue + 1; //+1 to not get NO_POWERUP
-    //pPlayer->activePower = SPEED_BOOST;
+    if(pPlayer->activePower != NO_POWERUP) return;
+    pPlayer->activePower = powerUpValue;
     if(pPlayer->activePower == SPEED_BOOST) pPlayer->speedMultiplier=2;
+    if(pPlayer->activePower == FROZEN) resetPlayerSpeed(pPlayer, 1, 1);
     if(pPlayer->powerUpTimer != 0) SDL_RemoveTimer(pPlayer->powerUpTimer);
     pPlayer->powerUpTimer = SDL_AddTimer(3000, removePowerUp, pPlayer);
 }
 
-void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) { //kan säkert göras snyggare...
-    PowerUp currentPower = pPlayer1->activePower;
-    if(currentPower == FREEZE) {
-        assignPowerUp(3, pPlayer2); //player2 state is now frozen
-        return;
-    }
-    currentPower = pPlayer2->activePower;
-    if(currentPower == FREEZE) assignPowerUp(3, pPlayer1); //player1 state is now frozen
+void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) {
+    if(pPlayer1->activePower == FREEZE) assignPowerUp(FROZEN, pPlayer2); //player2 state is now frozen
+    else if(pPlayer2->activePower == FREEZE) assignPowerUp(FROZEN, pPlayer1); //player1 state is now frozen
 }
 
 Uint32 removePowerUp(Uint32 interval, void *param) {
@@ -147,28 +144,24 @@ void setPlayerPosition(Player *pPlayer, int x, int y) {
 void setStartingPosition(Player *pPlayer, int playerIndex, int w, int h) {
     pPlayer->playerVelocityX = 0;
     pPlayer->playerVelocityY = 0;
-    /*spelare 0, 2 och 4 är i samma lag
-    spelare 1, 3, och 5 är i samma lag
-    lag beror på vilken ordning man joinar*/
-    if(playerIndex == 0 || playerIndex == 1) {
-        pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2;
-        if(playerIndex == 1) {
-            pPlayer->playerRect.x += w/2; 
-        }
-        pPlayer->playerRect.y = (h - pPlayer->playerRect.h) / 2;
-    }
-    /*else if(playerIndex == 2 || playerIndex == 3) {
+    switch(playerIndex) { //x(w) ligg, y(h) stå
+        case 0: pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2;
+                pPlayer->playerRect.y = h/ 2;
+        break;
+        case 1: pPlayer->playerRect.x = w / 4 - pPlayer->playerRect.w / 2 + (w/2);
+                //pPlayer->playerRect.x += w/2; 
+                pPlayer->playerRect.y = h/ 2;
+        break;
+        case 2: pPlayer->playerRect.x = w / 5 - pPlayer->playerRect.w / 2;
+                //pPlayer->playerRect.x += w/2; 
+                pPlayer->playerRect.y = h / 3;
+        break;
+        case 3: pPlayer->playerRect.x = w - (w/5);
+                //pPlayer->playerRect.x += w/3;
+                pPlayer->playerRect.y = h / 3;
+        break;
         
-        if(playerIndex == 3) {
-            
-        }
     }
-    else if(playerIndex == 4 || playerIndex == 5) {
-
-        if(playerIndex == 5) {
-
-        }
-    }*/
 }
 
 void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {
@@ -192,24 +185,12 @@ void restrictPlayerWithinWindow(Player *pPlayer, int width, int height) {
     }
 }
 
-void resetPlayerPos(Player *pPlayer, int playerIndex, int w, int h)
-{
-    int halfWidth = w / 2;
-    if (playerIndex == 0) {
-        pPlayer->playerRect.x = halfWidth / 2 - pPlayer->playerRect.w / 2 + BALL_WINDOW_X1; //mitten av första planhalva
-    } else {
-        pPlayer->playerRect.x = halfWidth + (halfWidth / 2 - pPlayer->playerRect.w / 2) - BALL_WINDOW_X1; //mitten av andra planhalva
-    }
-    pPlayer->playerRect.y = MIDDLE_OF_FIELD_Y - (pPlayer->playerRect.h/2);
-    pPlayer->playerVelocityX = 0;
-    pPlayer->playerVelocityY = 0;
-}
-
 void getPlayerSendData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayerData->playerVelocityX = pPlayer->playerVelocityX;
     pPlayerData->playerVelocityY = pPlayer->playerVelocityY;
     pPlayerData->yPos = pPlayer->playerRect.y;
     pPlayerData->xPos = pPlayer->playerRect.x;
+    pPlayerData->activePower = pPlayer->activePower;
 }
 
 void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
@@ -217,6 +198,7 @@ void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayer->playerVelocityY = pPlayerData->playerVelocityY;
     pPlayer->playerRect.y = pPlayerData->yPos;
     pPlayer->playerRect.x = pPlayerData->xPos;
+    pPlayer->activePower = pPlayerData->activePower;
 }
 
 void destroyPlayer(Player *pPlayer) {
@@ -234,15 +216,16 @@ void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2) {
     SDL_Rect rect2 = getPlayerRect(pPlayer2);
     
     if (checkCollision(rect1, rect2)) {
-        freezeEnemyPlayer(pPlayer1, pPlayer2);
         // Calculate overlap in both dimensions
         int overlapX;
         if(rect1.x<rect2.x) overlapX = (rect1.x + rect1.w - rect2.x);
         else overlapX = (rect2.x + rect2.w - rect1.x);
 
         int overlapY;
-        if(rect1.y<rect2.y) overlapY = (rect1.y + rect1.h - rect2.y);
-        else overlapY = (rect2.y + rect2.h - rect1.y);
+        if(rect1.y<rect2.y) 
+            overlapY = (rect1.y + rect1.h - rect2.y);
+        else 
+            overlapY = (rect2.y + rect2.h - rect1.y);
 
         // Resolve collision based on the lesser overlap
         if (overlapX < overlapY) {

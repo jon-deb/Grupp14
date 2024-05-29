@@ -63,13 +63,14 @@ void closeGame(Game *pGame);
 int main(int argv, char** args){
     Game g={0};
     if(!initiate(&g)) return 1;
+    srand(500);
     run(&g);
     closeGame(&g);
     return 0;
 }
 
 int initiate(Game *pGame){
-    srand(time(NULL));
+    //srand(time(NULL));
     if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
         printf("Error: %s\n",SDL_GetError());
         return 0;
@@ -191,8 +192,6 @@ void run(Game *pGame){
 
     SDL_TimerID timerID = 0;
 
-
-
     while(!close_requested){
         switch (pGame->state)
         {
@@ -224,6 +223,7 @@ void run(Game *pGame){
                 for (int i = 0; i < pGame->nrOfPlayers - 1; i++) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
                         handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
+                        freezeEnemyPlayer(pGame->pPlayer[i], pGame->pPlayer[j]);
                     }
                 }
                 for (int i=0; i<pGame->nrOfPlayers; i++) {
@@ -232,15 +232,14 @@ void run(Game *pGame){
                     handlePlayerBallCollision(playerRect, ballRect, pGame->pBall);
                     if(checkCollision(playerRect, getPowerRect(pGame->pPowerUpBox))) {
                         updatePowerCube(pGame->pPowerUpBox, pGame->pRenderer, playerRect);
-                        int powerUpValue = rand()%NR_OF_POWERUPS;
-                        assignPowerUp(powerUpValue, pGame->pPlayer[i]);
-                    } 
+                        assignPowerUp(pGame->sData.powerUpValue, pGame->pPlayer[i]);
+                    }
                 }
 
-               if (!goal(pGame->pBall)) {
+                if (!goal(pGame->pBall)) {
                     restrictBallWithinWindow(pGame->pBall);
-               }
-               else {
+                }
+                else {
                     for(int i = 0; i < pGame->nrOfPlayers; i++)
                         setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
                 //false if team left (A) scored and true if team right (B) scored
@@ -249,7 +248,8 @@ void run(Game *pGame){
                     } else if (goalScored) {
                         pGame->teamB++;
                     }
-               }
+                }
+                applyFriction(pGame->pBall);
                 renderGame(pGame);
                 
                 break;
@@ -266,7 +266,7 @@ void run(Game *pGame){
                     if(pGame->nrOfClients==MAX_PLAYERS) setUpGame(pGame);
                 }
                 sendGameData(pGame);
-                printf("nrOfClients: %d\n", pGame->nrOfClients);
+                //printf("nrOfClients: %d\n", pGame->nrOfClients);
                 break;
         }
         //SDL_Delay(1000/60-15);//might work when you run on different processors
@@ -380,13 +380,14 @@ void renderGame(Game *pGame) {
 }
 
 void setUpGame(Game *pGame){
-    for(int i=0;i<MAX_PLAYERS;i++) resetPlayerPos(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
+    for(int i=0;i<MAX_PLAYERS;i++) setStartingPosition(pGame->pPlayer[i], i, WINDOW_WIDTH, WINDOW_HEIGHT);
     pGame->nrOfPlayers=MAX_PLAYERS;
     pGame->state = ONGOING;
 }
 
 void sendGameData(Game *pGame){
     pGame->sData.gState = pGame->state;
+    pGame->sData.powerUpValue = rand()%NR_OF_POWERUPS;
     for(int i=0;i<MAX_PLAYERS;i++){
         getPlayerSendData(pGame->pPlayer[i], &(pGame->sData.players[i]));
     }
