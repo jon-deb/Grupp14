@@ -32,7 +32,7 @@ typedef struct game {
     SDL_Texture *backgroundTexture;
     TTF_Font *pFont, *pScoreboardFont, *pLobbyFont;
 
-    Text *pOverText, *pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText, *pPowerUpText[NR_OF_POWERUPS];
+    Text *pOverTextA, *pOverTextB, *pOverTextC, *pOverTextD,*pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText, *pPowerUpText[NR_OF_POWERUPS];
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     PowerUpBox *pPowerUpBox;
@@ -165,7 +165,10 @@ int initiate(Game *pGame) {
 
     pGame->pPowerUpText[0] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"Speed increased",WINDOW_WIDTH,WINDOW_HEIGHT-200); //random värden, testar bara
     pGame->pPowerUpText[1] = createText(pGame->pRenderer,238,168,65,pGame->pFont,"FROZEN",WINDOW_WIDTH/2,WINDOW_HEIGHT/2);
-    pGame->pOverText = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Game Over! Press space to restart", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+    pGame->pOverTextA = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Team A Won!", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+    pGame->pOverTextB = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Team B Won!\n", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+    pGame->pOverTextC = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Game Draw!", WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+    pGame->pOverTextD = createText(pGame->pRenderer, 238, 168, 65, pGame->pFont, "Closing in 5 sec...", WINDOW_WIDTH /2, WINDOW_HEIGHT / 2+100);
     pGame->teamA = 0;
     pGame->teamB = 0;
 
@@ -254,20 +257,40 @@ void run(Game *pGame) {
                 renderGame(pGame);
                 break;
 
-            case GAME_OVER:
-                while (SDL_PollEvent(&event)) {
-                    if (event.type == SDL_QUIT) {
-                        close_requested = 1;
-                    } else if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-                        pGame->state = START;
-                        pGame->matchTime = 3000; // Reset match time
-                        // Reset other game variables if needed
-                    }
-                }
-                SDL_RenderClear(pGame->pRenderer);
-                drawText(pGame->pOverText);
-                SDL_RenderPresent(pGame->pRenderer);
-                break;
+        case GAME_OVER:
+            Uint32 gameOverStartTime = SDL_GetTicks();  // Registrera starttiden
+
+            while (!close_requested) {
+            while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                close_requested = 1;
+            }
+        }
+
+       
+        if (SDL_GetTicks() - gameOverStartTime >= 5000) {
+            close_requested = 1;
+        }
+
+        if(pGame->teamA > pGame->teamB) {
+            SDL_RenderClear(pGame->pRenderer);
+            drawText(pGame->pOverTextA);
+            drawText(pGame->pOverTextD);
+            SDL_RenderPresent(pGame->pRenderer);  
+        } else if(pGame->teamB > pGame->teamA) {
+            SDL_RenderClear(pGame->pRenderer);
+            drawText(pGame->pOverTextB);
+            drawText(pGame->pOverTextD);
+            SDL_RenderPresent(pGame->pRenderer);
+        } else {
+            SDL_RenderClear(pGame->pRenderer);
+            drawText(pGame->pOverTextC);
+            drawText(pGame->pOverTextD);
+            SDL_RenderPresent(pGame->pRenderer);
+        }
+    }
+    
+        break;
 
             case START:
                 renderLobby(pGame);
@@ -521,7 +544,10 @@ void closeGame(Game *pGame) {
     if(pGame->pSpot3Text) destroyText(pGame->pSpot3Text);
     if(pGame->pSpot4Text) destroyText(pGame->pSpot4Text);
     if(pGame->pHostSpotText) destroyText(pGame->pHostSpotText);
-    if(pGame->pOverText) destroyText(pGame->pOverText); 
+    if(pGame->pOverTextA) destroyText(pGame->pOverTextA); 
+    if(pGame->pOverTextB) destroyText(pGame->pOverTextB); 
+    if(pGame->pOverTextC) destroyText(pGame->pOverTextC); 
+    if(pGame->pOverTextD) destroyText(pGame->pOverTextD);
     if(pGame->pMatchTimerText) destroyText(pGame->pMatchTimerText);
     if(pGame->pGoalsTextTeamA) destroyText(pGame->pGoalsTextTeamA);
     if(pGame->pGoalsTextTeamB) destroyText(pGame->pGoalsTextTeamB);
