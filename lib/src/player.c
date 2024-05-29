@@ -64,20 +64,25 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
 
 void assignPowerUp(int powerUpValue, Player *pPlayer) {
     pPlayer->activePower = powerUpValue + 1; //+1 to not get NO_POWERUP
-    //pPlayer->activePower = SPEED_BOOST;
     if(pPlayer->activePower == SPEED_BOOST) pPlayer->speedMultiplier=2;
+    if(pPlayer->activePower == FROZEN) resetPlayerSpeed(pPlayer, 1, 1); //testa online
     if(pPlayer->powerUpTimer != 0) SDL_RemoveTimer(pPlayer->powerUpTimer);
     pPlayer->powerUpTimer = SDL_AddTimer(3000, removePowerUp, pPlayer);
 }
 
 void freezeEnemyPlayer(Player *pPlayer1, Player *pPlayer2) { //kan säkert göras snyggare...
+    /*
+    //gammal kod
     PowerUp currentPower = pPlayer1->activePower;
     if(currentPower == FREEZE) {
         assignPowerUp(3, pPlayer2); //player2 state is now frozen
         return;
     }
     currentPower = pPlayer2->activePower;
-    if(currentPower == FREEZE) assignPowerUp(3, pPlayer1); //player1 state is now frozen
+    if(currentPower == FREEZE) assignPowerUp(3, pPlayer1); //player1 state is now frozen*/
+    //ny kod
+    if(pPlayer1->activePower == FREEZE) assignPowerUp(FROZEN, pPlayer2); //player2 state is now frozen
+    else if(pPlayer2->activePower == FREEZE) assignPowerUp(FROZEN, pPlayer1); //player1 state is now frozen
 }
 
 Uint32 removePowerUp(Uint32 interval, void *param) {
@@ -241,8 +246,10 @@ void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2) {
         else overlapX = (rect2.x + rect2.w - rect1.x);
 
         int overlapY;
-        if(rect1.y<rect2.y) overlapY = (rect1.y + rect1.h - rect2.y);
-        else overlapY = (rect2.y + rect2.h - rect1.y);
+        if(rect1.y<rect2.y) 
+            overlapY = (rect1.y + rect1.h - rect2.y);
+        else 
+            overlapY = (rect2.y + rect2.h - rect1.y);
 
         // Resolve collision based on the lesser overlap
         if (overlapX < overlapY) {

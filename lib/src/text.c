@@ -2,7 +2,7 @@
 #include <SDL_ttf.h>
 #include "text.h"
 
-typedef struct text{
+typedef struct text{ //ta bort typedef
     SDL_Rect rect;
     SDL_Texture *pTexture;
     SDL_Renderer *pRenderer;

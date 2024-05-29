@@ -18,12 +18,12 @@
 #define GOAL_BOTTOM 522 //distance from top of window to southern goal post
 
 
-typedef struct ball {
+typedef struct ball { //ta bort typedef innan inlämning
     SDL_Texture *texture;
     SDL_Rect rect;
     SDL_Surface *surface;
     float velocityX, velocityY;
-    bool collided;
+    bool collided; //ta bort innan inlämning
 } Ball;
 
 Ball *createBall(SDL_Renderer *renderer) {
@@ -86,14 +86,19 @@ void setBallY(Ball *pBall, int y) {
 }
 
 void applyFriction(Ball *pBall) {
+    /*//gamla koden:
     float vx = pBall->velocityX;
     float vy = pBall->velocityY;
     
     // sänker hastigheten 
     vx *= FRICTION_COEFFICIENT;
     vy *= FRICTION_COEFFICIENT;
+    
+    setBallVelocity(pBall, vx, vy);*/
 
-    setBallVelocity(pBall, vx, vy);
+    //nya koden
+    pBall->velocityX *= FRICTION_COEFFICIENT;
+    pBall->velocityY *= FRICTION_COEFFICIENT;
 }
 
 void restrictBallWithinWindow(Ball *pBall) {
@@ -144,9 +149,7 @@ void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
         
         collisionTimer = 0.5f; // 0.5 sekunder
     }
-    
-    applyFriction(pBall);
-    
+    //applyFriction(pBall);
     updateBallPosition(pBall);
     
     collisionTimer -= 1.0f / 60.0f;
@@ -193,6 +196,7 @@ bool goalScored(Ball *pBall) {
     if (ballRect.x < WINDOW_WIDTH/2) { //ball is in left half of field
         setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
         setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        setBallVelocity(pBall, 0, 0);
         pBall->velocityX = 0;
         pBall->velocityY = 0;
         return 0;
@@ -200,6 +204,7 @@ bool goalScored(Ball *pBall) {
     else { //ball is in right half of field
         setBallX(pBall, WINDOW_WIDTH / 2 - ballRect.w / 2);
         setBallY(pBall, MIDDLE_OF_FIELD_Y - ballRect.h / 2);
+        setBallVelocity(pBall, 0, 0);
         pBall->velocityX = 0;
         pBall->velocityY = 0;
         return 1;
