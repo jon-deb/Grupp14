@@ -12,19 +12,18 @@
 #define BALL_WINDOW_Y2 765 //distance from top of window to bottom of field
 #define MOVEMENT_SPEED 200
 #define MIDDLE_OF_FIELD_Y 440 //distance from top of window to mid point of field
-#define FRICTION_COEFFICIENT 0.95f
+#define FRICTION_COEFFICIENT 0.94f
 #define BALL_SPEED_AFTER_COLLISION 500
 #define GOAL_TOP 357 //distance from top of window to northern goal post
 #define GOAL_BOTTOM 522 //distance from top of window to southern goal post
 
 
-typedef struct ball { //ta bort typedef innan inlämning
+struct ball {
     SDL_Texture *texture;
     SDL_Rect rect;
     SDL_Surface *surface;
     float velocityX, velocityY;
-    bool collided; //ta bort innan inlämning
-} Ball;
+};
 
 Ball *createBall(SDL_Renderer *renderer) {
     Ball *pBall = malloc(sizeof(Ball));
@@ -54,7 +53,6 @@ Ball *createBall(SDL_Renderer *renderer) {
     pBall->rect.y = MIDDLE_OF_FIELD_Y - pBall->rect.h / 2; 
     pBall->velocityX = 0;
     pBall->velocityY = 0;
-    pBall->collided = false;
 
     return pBall;
 }
@@ -85,14 +83,17 @@ void setBallY(Ball *pBall, int y) {
     pBall->rect.y = y;
 }
 
+void applyFriction(Ball *pBall) { //ta bort vx och vy
 void applyFriction(Ball *pBall) {
     /*//gamla koden:
     float vx = pBall->velocityX;
     float vy = pBall->velocityY;
-    
     // sänker hastigheten 
     vx *= FRICTION_COEFFICIENT;
     vy *= FRICTION_COEFFICIENT;
+
+    if(vx <=145) pBall->velocityX = 0;
+    if(vy <=145) pBall->velocityY = 0;
     
     setBallVelocity(pBall, vx, vy);*/
 
@@ -104,24 +105,23 @@ void applyFriction(Ball *pBall) {
 void restrictBallWithinWindow(Ball *pBall) {
     SDL_Rect ballRect = getBallRect(pBall);
     if (ballRect.x < BALL_WINDOW_X1) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) {
-            
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) 
             setBallX(pBall, 0);
-        }
         else setBallX(pBall, BALL_WINDOW_X1);
+        
         pBall->velocityX = -pBall->velocityX;
     } 
     if (ballRect.x + ballRect.w > BALL_WINDOW_X2) {
-        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM){
-            
+        if(ballRect.y >= GOAL_TOP && ballRect.y <= GOAL_BOTTOM) 
             setBallX(pBall, WINDOW_WIDTH);
-        } 
         else setBallX(pBall, BALL_WINDOW_X2-ballRect.w);
+
         pBall->velocityX = -pBall->velocityX;
     }
     if (ballRect.y < BALL_WINDOW_Y1) {
         setBallY(pBall, BALL_WINDOW_Y1);
         pBall->velocityY = -pBall->velocityY;
+
     } else if (ballRect.y + ballRect.h > BALL_WINDOW_Y2) {
         setBallY(pBall, BALL_WINDOW_Y2 - ballRect.h);
         pBall->velocityY = -pBall->velocityY;
@@ -146,10 +146,11 @@ void handlePlayerBallCollision(SDL_Rect pRect, SDL_Rect bRect, Ball *pBall) {
 
         
         setBallVelocity(pBall, normalX * BALL_SPEED_AFTER_COLLISION, normalY * BALL_SPEED_AFTER_COLLISION);
-        
-        collisionTimer = 0.5f; // 0.5 sekunder
+        collisionTimer = 1.2f; // 0.5 sekunder
     }
+    
     //applyFriction(pBall);
+    
     updateBallPosition(pBall);
     
     collisionTimer -= 1.0f / 60.0f;

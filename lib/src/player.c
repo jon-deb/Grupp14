@@ -20,7 +20,7 @@
 
 struct player {
     float playerVelocityX, playerVelocityY, speedMultiplier;
-    int xPos, yPos;
+    int xPos, yPos, team;
     Ball *pBall;
     PowerUp activePower;
     SDL_TimerID powerUpTimer;
@@ -41,9 +41,10 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
 
     char imagePath[29];
     snprintf(imagePath, sizeof(imagePath), "../lib/resources/player%d.png", playerIndex+1);
+    pPlayer->team = playerIndex % 2; //for use with assigning powerups
     pPlayer->activePower = NO_POWERUP;
     pPlayer->speedMultiplier = 1;
-    //pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer); //testa att kommentera bort innan push
+    pPlayer->powerUpTimer = SDL_AddTimer(0, removePowerUp, pPlayer);
     
     SDL_Surface *playerSurface = IMG_Load(imagePath);
     if (!playerSurface) {
@@ -63,7 +64,8 @@ Player *createPlayer(SDL_Renderer *pGameRenderer, int w, int h, int playerIndex)
 }
 
 void assignPowerUp(int powerUpValue, Player *pPlayer) {
-    pPlayer->activePower = powerUpValue + 1; //+1 to not get NO_POWERUP
+    if(pPlayer->activePower != NO_POWERUP) return;
+    pPlayer->activePower = powerUpValue;
     if(pPlayer->activePower == SPEED_BOOST) pPlayer->speedMultiplier=2;
     if(pPlayer->activePower == FROZEN) resetPlayerSpeed(pPlayer, 1, 1); //testa online
     if(pPlayer->powerUpTimer != 0) SDL_RemoveTimer(pPlayer->powerUpTimer);
@@ -222,6 +224,7 @@ void updatePlayerWithRecievedData(Player *pPlayer, PlayerData *pPlayerData){
     pPlayer->playerVelocityY = pPlayerData->playerVelocityY;
     pPlayer->playerRect.y = pPlayerData->yPos;
     pPlayer->playerRect.x = pPlayerData->xPos;
+    //pPlayer->activePower = pPlayerData->activePower;
 }
 
 void destroyPlayer(Player *pPlayer) {
@@ -239,7 +242,6 @@ void handlePlayerCollision(Player *pPlayer1, Player *pPlayer2) {
     SDL_Rect rect2 = getPlayerRect(pPlayer2);
     
     if (checkCollision(rect1, rect2)) {
-        freezeEnemyPlayer(pPlayer1, pPlayer2);
         // Calculate overlap in both dimensions
         int overlapX;
         if(rect1.x<rect2.x) overlapX = (rect1.x + rect1.w - rect2.x);

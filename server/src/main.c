@@ -224,6 +224,7 @@ void run(Game *pGame){
                 for (int i = 0; i < pGame->nrOfPlayers - 1; i++) {
                     for (int j = i + 1; j < pGame->nrOfPlayers; j++) {
                         handlePlayerCollision(pGame->pPlayer[i], pGame->pPlayer[j]);
+                        freezeEnemyPlayer(pGame->pPlayer[i], pGame->pPlayer[j]);
                     }
                 }
                 for (int i=0; i<pGame->nrOfPlayers; i++) {
@@ -250,6 +251,7 @@ void run(Game *pGame){
                         pGame->teamB++;
                     }
                }
+                applyFriction(pGame->pBall);
                 renderGame(pGame);
                 
                 break;
