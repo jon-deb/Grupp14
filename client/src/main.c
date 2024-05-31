@@ -33,7 +33,7 @@ typedef struct game {
     SDL_Texture *backgroundTexture, *pIpTexture;
     TTF_Font *pFont, *pScoreboardFont, *pLobbyFont;
 
-    Text *pOverTextA, *pOverTextB, *pOverTextC, *pOverTextD,*pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText, *pPowerUpText[NR_OF_POWERUPS], *pIpText, *pEnterIpText;
+    Text *pOverTextA, *pOverTextB, *pOverTextC, *pOverTextD,*pMatchTimerText, *pGoalsTextTeamA, *pGoalsTextTeamB, *pHostSpotText, *pSpot1Text, *pSpot2Text, *pSpot3Text, *pSpot4Text, *pLobbyText, *pPowerUpText[NR_OF_POWERUPS], *pIpText, *pEnterIpText, *pOutputIpText;
     Player *pPlayer[MAX_PLAYERS];
     Ball *pBall;
     PowerUpBox *pPowerUpBox;
@@ -41,14 +41,13 @@ typedef struct game {
     ClientData clients[MAX_PLAYERS];
     bool connected[MAX_PLAYERS];
     int hostConnected;
+
+    char pIP[50];
     
     int teamA;
     int teamB;
     int nrOfPlayers, playerNr;
     int powerUpValue;
-
-    char enterIpString[STRING_LENGTH];
-    char ipString[STRING_LENGTH];
 
     UDPsocket pSocket;
 	IPaddress serverAddress;
@@ -109,10 +108,6 @@ int initiate(Game *pGame) {
 
     if (!(pGame->pSocket = SDLNet_UDP_Open(0))) {//0 means not a server
 		printf("SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-		return 0;
-	}
-    if (SDLNet_ResolveHost(&(pGame->serverAddress), "127.0.0.1", 2000)) {
-		printf("SDLNet_ResolveHost(127.0.0.1 2000): %s\n", SDLNet_GetError());
 		return 0;
 	}
     if (!(pGame->pPacket = SDLNet_AllocPacket(512))) {
@@ -201,7 +196,7 @@ void run(Game *pGame) {
     SDL_TimerID timerID = 0;
     int joining = 0;
     pGame->hostConnected = 0;
-    snprintf(pGame->ipString, sizeof(pGame->ipString), "127.0.0.1");
+    strcpy(pGame->pIP, "Null");
 
     while (!close_requested) {
         switch(pGame->state) {
@@ -273,13 +268,21 @@ void run(Game *pGame) {
         case START:
             renderLobby(pGame);
             if(SDL_PollEvent(&event)) {
-                printf("before enter press\n");
                 if(event.type == SDL_QUIT) {
                     close_requested = 1;
                 } 
                 else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
-                    printf("before getinput function\n");
                     getInputIP(pGame);
+
+                    if (SDLNet_ResolveHost(&(pGame->serverAddress), pGame->pIP, 2000)) {
+                        printf("SDLNet_ResolveHost(%s 2000): %s\n", pGame->pIP, SDLNet_GetError());
+                        closeGame(pGame);
+                    }
+
+                    // Update the packet address
+                    pGame->pPacket->address.host = pGame->serverAddress.host;
+                    pGame->pPacket->address.port = pGame->serverAddress.port;
+
                     if(SDLNet_UDP_Recv(pGame->pSocket, pGame->pPacket)) {
                         pGame->hostConnected = 1;
                         updateWithServerData(pGame);
@@ -316,6 +319,7 @@ void renderLobby(Game *pGame){
     char spot2String[50];
     char spot3String[50];
     char spot4String[50];
+    char inputIpString[50];
 
     if (pGame->hostConnected)
     {
@@ -351,7 +355,7 @@ void renderLobby(Game *pGame){
         snprintf(spot4String, sizeof(spot4String), "Spot 4 is available");
     }
 
-    snprintf(pGame->enterIpString, sizeof(pGame->enterIpString), "Press Enter to enter IP");
+    snprintf(inputIpString, sizeof(inputIpString), "Press Enter to edit IP");
 
     pGame->pLobbyText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, lobbyString, WINDOW_WIDTH/2, 100);
     pGame->pHostSpotText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, hostSpotString, WINDOW_WIDTH/2, 200);
@@ -359,12 +363,10 @@ void renderLobby(Game *pGame){
     pGame->pSpot2Text = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, spot2String, WINDOW_WIDTH/2, 350);
     pGame->pSpot3Text = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, spot3String, WINDOW_WIDTH/2, 400);
     pGame->pSpot4Text = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, spot4String, WINDOW_WIDTH/2, 450);
-    pGame->pEnterIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, pGame->enterIpString, 600, 600);
-    /*if (pGame->pIpText != NULL)
-    {
-        pGame->pIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, "", 600, 700);
-    }*/
-
+    pGame->pEnterIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, inputIpString, WINDOW_WIDTH/2, 600);
+    pGame->pOutputIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, pGame->pIP, WINDOW_WIDTH/2, 650);
+    
+    drawText(pGame->pOutputIpText);
 
     drawText(pGame->pLobbyText);
     drawText(pGame->pHostSpotText);
@@ -373,7 +375,6 @@ void renderLobby(Game *pGame){
     drawText(pGame->pSpot3Text);
     drawText(pGame->pSpot4Text);
     drawText(pGame->pEnterIpText);
-    //drawText(pGame->pIpText);
     destroyText(pGame->pHostSpotText);
     destroyText(pGame->pSpot1Text);
     destroyText(pGame->pSpot2Text);
@@ -381,7 +382,7 @@ void renderLobby(Game *pGame){
     destroyText(pGame->pSpot4Text);
     destroyText(pGame->pLobbyText);
     destroyText(pGame->pEnterIpText);
-    //destroyText(pGame->pIpText);
+    destroyText(pGame->pOutputIpText);
     
     SDL_RenderPresent(pGame->pRenderer);
 }
@@ -559,25 +560,20 @@ Uint32 decreaseMatchTime(Uint32 interval, void *param) {
     return interval;
 }
 
-void getInputIP(Game *pGame)
-{
-    printf("before init\n");
+void getInputIP(Game *pGame){
     SDL_StartTextInput();
+    SDL_RenderClear(pGame->pRenderer);
     int close_requested = 0;
     SDL_Event event;
     char inputText[STRING_LENGTH];
-    char enterIpString[STRING_LENGTH];
+    char inputIpString[STRING_LENGTH];
+    char outputIpString[STRING_LENGTH];
     strcpy(inputText, "");
-
-    //pGame->pIpText = createText(pGame->pRenderer, 255, 255, 255, pGame->pLobbyFont, "test", WINDOW_WIDTH/2, WINDOW_HEIGHT/2+100);
-
-    printf("before enter loop\n");
+                        
     while (!close_requested)
     {
-        while (SDL_PollEvent(&event) != 0)
-        {  
-            if (event.type == SDL_QUIT)
-            {
+        while (SDL_PollEvent(&event)) {
+            if(event.type == SDL_QUIT) {
                 close_requested = 1;
             }
             else if (event.type == SDL_TEXTINPUT)
@@ -595,27 +591,28 @@ void getInputIP(Game *pGame)
                 }
                 else if (event.key.keysym.sym == SDLK_RETURN)
                 {
-                    pGame->pIpText = createText(pGame->pRenderer, 255, 255, 255, pGame->pLobbyFont, inputText, 400, 300);
+                    if (strlen(inputText) > 0)
+                    {
+                        strcpy(pGame->pIP, inputText);
+                    }
                     close_requested = 1;
-                    //*currentState = Menu; // Update the game state to Menu
                 }
             }
         }
-
-        printf("finished loop\n");
-
         SDL_RenderClear(pGame->pRenderer);
-        destroyText(pGame->pEnterIpText);  
-        snprintf(pGame->ipString, sizeof(pGame->ipString), "Enter IP");
-        pGame->pEnterIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, pGame->enterIpString, 200, 200);
+        
+        snprintf(inputIpString, sizeof(inputIpString), "Enter IP");
+        pGame->pEnterIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, inputIpString, WINDOW_WIDTH/2, 600);
         drawText(pGame->pEnterIpText);
+        destroyText(pGame->pEnterIpText);
+        
+        snprintf(outputIpString, sizeof(outputIpString), " %s", inputText);
+        pGame->pOutputIpText = createText(pGame->pRenderer, 227, 220, 198, pGame->pLobbyFont, outputIpString, WINDOW_WIDTH/2, 650);
+        drawText(pGame->pOutputIpText);
+        destroyText(pGame->pOutputIpText);
         SDL_RenderPresent(pGame->pRenderer);
     }
-
     SDL_StopTextInput();
-    //SDL_DestroyTexture(messageTexture);
-    destroyText(pGame->pEnterIpText);
-    SDL_RenderClear(pGame->pRenderer);
 }
 
 void closeGame(Game *pGame) {
@@ -642,6 +639,10 @@ void closeGame(Game *pGame) {
     if(pGame->pMatchTimerText) destroyText(pGame->pMatchTimerText);
     if(pGame->pGoalsTextTeamA) destroyText(pGame->pGoalsTextTeamA);
     if(pGame->pGoalsTextTeamB) destroyText(pGame->pGoalsTextTeamB);
+    if(pGame->pIpText) destroyText(pGame->pIpText);
+    if(pGame->pEnterIpText) destroyText(pGame->pEnterIpText);
+
+
     for(int i=0; i<NR_OF_POWERUPS; i++) 
         if(pGame->pPowerUpText[i]) destroyText(pGame->pPowerUpText[i]);
     if(pGame->pFont) TTF_CloseFont(pGame->pFont);
