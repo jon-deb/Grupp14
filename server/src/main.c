@@ -167,7 +167,7 @@ int initiate(Game *pGame){
     for(int i = 0; i < MAX_PLAYERS; i++) {
         pGame->connected[i] = false;
     }
-    pGame->matchTime = 300000;
+    pGame->matchTime = 30000;
     
     return 1;
 }
